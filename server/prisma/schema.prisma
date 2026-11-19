@@ -1,0 +1,337 @@
+// JOBZY Database Schema - Prisma ORM
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id           String            @id @default(uuid())
+  email        String            @unique
+  passwordHash String
+  name         String
+  role         String            @default("CANDIDATE") // CANDIDATE, RECRUITER, ADMIN
+  avatar       String?
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+
+  candidateProfile CandidateProfile?
+  recruiterProfile RecruiterProfile?
+  notifications    Notification[]
+  auditLogs        AuditLog[]
+}
+
+model Company {
+  id          String   @id @default(uuid())
+  name        String
+  logo        String?
+  website     String?
+  industry    String?
+  description String?
+  location    String?
+  size        String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  recruiters RecruiterProfile[]
+  jobs       Job[]
+}
+
+model CandidateProfile {
+  id              String   @id @default(uuid())
+  userId          String   @unique
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  phone           String?
+  location        String?
+  title           String?
+  bio             String?
+  linkedinUrl     String?
+  githubUrl       String?
+  portfolioUrl    String?
+  experienceYears Float    @default(0)
+  education       String?  // JSON string of education history
+  extractedProfile String? // Full JSON parsed candidate profile
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  resumes         Resume[]
+  skills          CandidateSkill[]
+  projects        Project[]
+  applications    Application[]
+  analyses        Analysis[]
+  matches         CandidateMatch[]
+  shortlists      Shortlist[]
+}
+
+model RecruiterProfile {
+  id          String   @id @default(uuid())
+  userId      String   @unique
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  companyId   String?
+  company     Company? @relation(fields: [companyId], references: [id], onDelete: SetNull)
+  designation String?
+  department  String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  jobs        Job[]
+  shortlists  Shortlist[]
+}
+
+model Resume {
+  id               String            @id @default(uuid())
+  candidateId      String
+  candidate        CandidateProfile  @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  originalFileName String
+  filePath         String
+  fileType         String            @default("application/pdf")
+  extractedText    String?
+  parsedData       String?           // JSON string of parsed sections, skills, work, education
+  atsScore         Float             @default(0)
+  isPrimary        Boolean           @default(false)
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+
+  versions         ResumeVersion[]
+  applications     Application[]
+  analyses         Analysis[]
+  recommendations  AIRecommendation[]
+}
+
+model ResumeVersion {
+  id          String   @id @default(uuid())
+  resumeId    String
+  resume      Resume   @relation(fields: [resumeId], references: [id], onDelete: Cascade)
+  versionName String
+  content     String   // Full text or JSON content
+  isCurrent   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+}
+
+model Skill {
+  id        String   @id @default(uuid())
+  name      String   @unique
+  category  String   @default("TECHNICAL") // TECHNICAL, SOFT, DOMAIN
+  synonyms  String?  // JSON array of aliases/synonyms
+  createdAt DateTime @default(now())
+
+  candidateSkills  CandidateSkill[]
+  jobRequirements  JobRequirement[]
+}
+
+model CandidateSkill {
+  id                  String           @id @default(uuid())
+  candidateId         String
+  candidate           CandidateProfile @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  skillId             String
+  skill               Skill            @relation(fields: [skillId], references: [id], onDelete: Cascade)
+  proficiencyEstimate String           @default("INTERMEDIATE") // BEGINNER, INTERMEDIATE, ADVANCED
+  experienceMonths    Int              @default(12)
+  evidence            String?          // e.g. "Used in Project X and at Company Y"
+  createdAt           DateTime         @default(now())
+
+  @@unique([candidateId, skillId])
+}
+
+model Project {
+  id                   String           @id @default(uuid())
+  candidateId          String
+  candidate            CandidateProfile @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  name                 String
+  description          String?
+  technologies         String?          // JSON array or comma separated
+  architecture         String?
+  complexityAssessment String?          // Inferred complexity: LOW, MEDIUM, HIGH, ENTERPRISE
+  url                  String?
+  createdAt            DateTime         @default(now())
+}
+
+model Job {
+  id                 String           @id @default(uuid())
+  recruiterId        String
+  recruiter          RecruiterProfile @relation(fields: [recruiterId], references: [id], onDelete: Cascade)
+  companyId          String?
+  company            Company?         @relation(fields: [companyId], references: [id], onDelete: SetNull)
+  title              String
+  description        String
+  responsibilities   String?          // JSON array or bullet text
+  requiredSkills     String?          // JSON array of skill strings
+  preferredSkills    String?          // JSON array of skill strings
+  minimumExperience  Float            @default(0)
+  maximumExperience  Float?
+  qualifications     String?
+  location           String?
+  employmentType     String           @default("FULL_TIME") // FULL_TIME, PART_TIME, CONTRACT, INTERNSHIP, REMOTE
+  isRemote           Boolean          @default(false)
+  salaryMin          Int?
+  salaryMax          Int?
+  currency           String           @default("USD")
+  status             String           @default("PUBLISHED") // DRAFT, PUBLISHED, CLOSED
+  weightsConfig      String?          // JSON configuration for custom scoring weights
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
+
+  requirements       JobRequirement[]
+  applications       Application[]
+  analyses           Analysis[]
+  matches            CandidateMatch[]
+  shortlists         Shortlist[]
+}
+
+model JobRequirement {
+  id            String   @id @default(uuid())
+  jobId         String
+  job           Job      @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  skillId       String
+  skill         Skill    @relation(fields: [skillId], references: [id], onDelete: Cascade)
+  importance    String   @default("MANDATORY") // MANDATORY, PREFERRED
+  requiredLevel String   @default("INTERMEDIATE") // BEGINNER, INTERMEDIATE, ADVANCED
+  createdAt     DateTime @default(now())
+
+  @@unique([jobId, skillId])
+}
+
+model Application {
+  id          String   @id @default(uuid())
+  candidateId String
+  candidate   CandidateProfile @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  jobId       String
+  job         Job              @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  resumeId    String?
+  resume      Resume?          @relation(fields: [resumeId], references: [id], onDelete: SetNull)
+  status      String           @default("APPLIED") 
+  // APPLIED, UNDER_REVIEW, SHORTLISTED, INTERVIEW_SCHEDULED, INTERVIEW_COMPLETED, OFFER_EXTENDED, HIRED, REJECTED, WITHDRAWN
+  coverLetter String?
+  notes       String?
+  appliedAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  statusHistory ApplicationStatusHistory[]
+  interviews    Interview[]
+
+  @@unique([candidateId, jobId])
+}
+
+model ApplicationStatusHistory {
+  id             String      @id @default(uuid())
+  applicationId  String
+  application    Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  previousStatus String?
+  newStatus      String
+  changedBy      String?     // User ID or name
+  note           String?
+  createdAt      DateTime    @default(now())
+}
+
+model Analysis {
+  id                   String           @id @default(uuid())
+  candidateId          String
+  candidate            CandidateProfile @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  resumeId             String
+  resume               Resume           @relation(fields: [resumeId], references: [id], onDelete: Cascade)
+  jobId                String?
+  job                  Job?             @relation(fields: [jobId], references: [id], onDelete: SetNull)
+  overallScore         Float            @default(0)
+  atsReadabilityScore  Float            @default(0)
+  matchScore           Float            @default(0)
+  skillScore           Float            @default(0)
+  experienceScore      Float            @default(0)
+  projectScore         Float            @default(0)
+  educationScore       Float            @default(0)
+  detailedBreakdown    String?          // JSON object containing category breakdowns
+  missingSkills        String?          // JSON array of missing skills
+  matchedSkills        String?          // JSON array of matched skills
+  recommendations      String?          // JSON array of structured recommendations
+  formattingWarnings   String?          // JSON array of ATS issues
+  createdAt            DateTime         @default(now())
+}
+
+model CandidateMatch {
+  id                  String           @id @default(uuid())
+  candidateId         String
+  candidate           CandidateProfile @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  jobId               String
+  job                 Job              @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  overallScore        Float            @default(0)
+  skillScore          Float            @default(0)
+  experienceScore     Float            @default(0)
+  projectScore        Float            @default(0)
+  educationScore      Float            @default(0)
+  evidence            String?          // JSON evidence explanations
+  missingRequirements String?          // JSON list
+  confidence          Float            @default(0.9)
+  createdAt           DateTime         @default(now())
+  updatedAt           DateTime         @updatedAt
+
+  @@unique([candidateId, jobId])
+}
+
+model Shortlist {
+  id          String           @id @default(uuid())
+  recruiterId String
+  recruiter   RecruiterProfile @relation(fields: [recruiterId], references: [id], onDelete: Cascade)
+  jobId       String
+  job         Job              @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  candidateId String
+  candidate   CandidateProfile @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  notes       String?
+  createdAt   DateTime         @default(now())
+
+  @@unique([jobId, candidateId])
+}
+
+model Interview {
+  id            String      @id @default(uuid())
+  applicationId String
+  application   Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  scheduledAt   DateTime
+  interviewType String      @default("TECHNICAL") // TECHNICAL, HR, SYSTEM_DESIGN, SCREENING
+  meetingLink   String?
+  location      String?
+  status        String      @default("SCHEDULED") // SCHEDULED, COMPLETED, CANCELLED, RESCHEDULED
+  feedback      String?
+  rating        Int?        // 1-5 scale
+  interviewer   String?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+}
+
+model Notification {
+  id        String    @id @default(uuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title     String
+  message   String
+  type      String    @default("INFO") // INFO, APPLICATION, INTERVIEW, SHORTLIST, MATCH
+  link      String?
+  readAt    DateTime?
+  createdAt DateTime  @default(now())
+}
+
+model AIRecommendation {
+  id            String   @id @default(uuid())
+  resumeId      String
+  resume        Resume   @relation(fields: [resumeId], references: [id], onDelete: Cascade)
+  category      String   // SUMMARY, EXPERIENCE, SKILL, PROJECT
+  priority      String   @default("MEDIUM") // HIGH, MEDIUM, LOW
+  originalText  String
+  suggestedText String
+  explanation   String
+  requirementRef String? // Referenced JD requirement
+  status        String   @default("PENDING") // PENDING, ACCEPTED, REJECTED
+  createdAt     DateTime @default(now())
+}
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  action    String
+  resource  String
+  details   String?  // JSON details
+  ipAddress String?
+  createdAt DateTime @default(now())
+}

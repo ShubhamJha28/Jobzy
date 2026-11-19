@@ -1,0 +1,22 @@
+{
+  "name": "jobzy",
+  "version": "1.0.0",
+  "private": true,
+  "description": "JOBZY - Complete AI-Powered Talent Intelligence & Recruitment Platform",
+  "scripts": {
+    "dev:server": "cd server && npm run dev",
+    "dev:client": "cd client && npm run dev",
+    "build:server": "cd server && npm run build",
+    "build:client": "cd client && npm run build",
+    "seed": "cd server && npm run prisma:seed",
+    "prisma:push": "cd server && npm run prisma:push",
+    "prisma:generate": "cd server && npm run prisma:generate"
+  },
+  "keywords": [
+    "talent-intelligence",
+    "recruitment",
+    "ats",
+    "resume-parser",
+    "ai-matching"
+  ]
+}
