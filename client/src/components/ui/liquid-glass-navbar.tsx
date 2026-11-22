@@ -2,12 +2,12 @@
 
 /**
  * Nimbus UI · Liquid Navbar — "Waterline"
+ * Enhanced for Jobzy: Whole Navbar Liquid Effect with Lime Water Physics (#C4F167).
  * A pill of water. The active drop stretches toward the item you pick, splits into
  * droplets on long jumps and merges back with a ripple. The cursor lifts a meniscus,
  * every tap sends a wave along the pill, and each icon plays its own little scene.
  * Water is drawn by a tiny WebGL shader (only inside the pill, paused off-screen);
  * without WebGL it falls back to a CSS drop. No dependencies besides React.
- * by guglielmogiannattasio.it
  */
 
 import * as React from "react"
@@ -35,6 +35,8 @@ export type LiquidNavbarProps = {
   sound?: boolean
   className?: string
   style?: React.CSSProperties
+  leftContent?: React.ReactNode
+  rightContent?: React.ReactNode
 }
 
 /* ---------- icons ---------- */
@@ -61,59 +63,279 @@ const DEFAULT_ITEMS: LiquidNavItem[] = [
 
 const PAD = 14 // canvas bleed around the pill, for shadows and ripples
 
-/* ---------- styles ---------- */
+/* ---------- styles (Lime Glass Theme) ---------- */
 const NIMBUS_CSS = `
-.nimbus-nav{--n-tint:rgba(255,255,255,.14);--n-fg:#0B132B;--n-fg-soft:rgba(11,19,43,.6);--n-rim:rgba(255,255,255,.7);
-  position:relative;display:inline-flex;align-items:center;gap:2px;padding:6px;border-radius:999px;isolation:isolate;
-  font-family:ui-sans-serif,-apple-system,"SF Pro Text","Segoe UI",system-ui,sans-serif;-webkit-font-smoothing:antialiased;user-select:none;-webkit-tap-highlight-color:transparent}
-.nimbus-nav[data-tone="dark"]{--n-tint:rgba(10,18,40,.26);--n-fg:#F1F7FF;--n-fg-soft:rgba(241,247,255,.66);--n-rim:rgba(255,255,255,.34)}
-.nimbus-glass{position:absolute;inset:0;border-radius:inherit;z-index:-2;overflow:hidden;background:var(--n-tint);
-  -webkit-backdrop-filter:blur(10px) saturate(1.2) brightness(1.08);backdrop-filter:blur(10px) saturate(1.2) brightness(1.08);
-  box-shadow:inset 0 1px 1px var(--n-rim),inset 0 0 0 1px rgba(255,255,255,.2),0 12px 32px -14px rgba(0,40,90,.5),0 2px 6px rgba(0,40,90,.1)}
-.nimbus-nav[data-refract="on"] .nimbus-glass{-webkit-backdrop-filter:url(#nimbus-refract) blur(2px) saturate(1.2) brightness(1.08);backdrop-filter:url(#nimbus-refract) blur(2px) saturate(1.2) brightness(1.08)}
-.nimbus-water{position:absolute;left:${-PAD}px;top:${-PAD}px;z-index:-1;pointer-events:none}
-.nimbus-nav[data-gl="off"] .nimbus-water{display:none}
-.nimbus-drop{display:none;position:absolute;top:6px;bottom:6px;left:0;border-radius:999px;z-index:-1;pointer-events:none;will-change:transform,width;
-  background:radial-gradient(120% 140% at 30% 0%,rgba(255,255,255,.75),rgba(255,255,255,0) 55%),rgba(255,255,255,.38);
-  box-shadow:inset 0 1px 1px rgba(255,255,255,.95),inset 0 -2px 6px rgba(0,162,255,.22),inset 0 0 0 1px rgba(255,255,255,.55),0 6px 16px -6px rgba(0,70,140,.45)}
-.nimbus-nav[data-gl="off"] .nimbus-drop{display:block}
-.nimbus-item{position:relative;z-index:1;display:inline-flex;align-items:center;gap:8px;height:42px;padding:0 16px;border:0;border-radius:999px;background:none;color:var(--n-fg-soft);
-  font-family:inherit;font-weight:500;font-size:14px;line-height:1;letter-spacing:-.01em;text-decoration:none;cursor:pointer;transition:color .25s}
-.nimbus-item:hover,.nimbus-item[aria-current="page"]{color:var(--n-fg)}
-.nimbus-item:focus-visible{outline:2px solid #00A2FF;outline-offset:2px}
-.nv-ico{position:relative;display:inline-flex;flex:none}
-.nv-ico svg{transition:transform .45s cubic-bezier(.3,1.6,.5,1)}
-.nimbus-item[aria-current="page"] .nv-ico svg{transform:translateY(-1px) scale(1.08)}
-.nv-door{fill:transparent}
-.nv-ico[data-fx="pop"] svg{animation:nvPop .5s cubic-bezier(.3,1.6,.5,1) both}
-@keyframes nvPop{0%{transform:scale(.72)}60%{transform:scale(1.2)}100%{transform:translateY(-1px) scale(1.08)}}
-.nv-ico[data-fx="plane"] svg{animation:nvPlane 1.15s cubic-bezier(.55,0,.3,1) both}
-@keyframes nvPlane{0%{transform:none}12%{transform:translate(-3px,2px) rotate(7deg)}42%{transform:translate(64px,-26px) rotate(-24deg) scale(.9);opacity:0}43%{transform:translate(-60px,16px) rotate(-12deg) scale(.9);opacity:0}58%{opacity:1}80%{transform:translate(3px,-1px) rotate(2deg)}100%{transform:translateY(-1px) scale(1.08)}}
-.nv-ico[data-fx="plane"]::after{content:"";position:absolute;left:55%;top:48%;height:2px;width:46px;border-radius:2px;transform-origin:0 50%;
-  background:linear-gradient(90deg,rgba(255,255,255,0),rgba(255,255,255,.95));animation:nvTrail 1.15s ease-out both;pointer-events:none}
-@keyframes nvTrail{0%,8%{opacity:0;transform:rotate(-22deg) scaleX(0)}30%{opacity:.9;transform:rotate(-22deg) scaleX(1)}55%,100%{opacity:0;transform:rotate(-22deg) translateX(30px) scaleX(.2)}}
-.nv-ico[data-fx="drop"] svg{animation:nvDrop .95s cubic-bezier(.4,0,.3,1) both;transform-origin:50% 100%}
-@keyframes nvDrop{0%{transform:translateY(-1px)}26%{transform:translateY(-13px) scale(.88,1.12)}46%{transform:translateY(3px) scale(1.3,.68)}62%{transform:translateY(-3px) scale(.92,1.08)}80%{transform:translateY(0) scale(1.04,.97)}100%{transform:translateY(-1px) scale(1.08)}}
-.nv-ico[data-fx="drop"]::before,.nv-ico[data-fx="drop"]::after{content:"";position:absolute;bottom:0;left:50%;width:4px;height:4px;margin-left:-2px;border-radius:50%;background:currentColor;opacity:0;pointer-events:none}
-.nv-ico[data-fx="drop"]::before{animation:nvSplashL .95s ease-out both}
-.nv-ico[data-fx="drop"]::after{animation:nvSplashR .95s ease-out both}
-@keyframes nvSplashL{0%,44%{opacity:0;transform:none}50%{opacity:.9;transform:translate(-5px,-6px)}75%,100%{opacity:0;transform:translate(-11px,1px) scale(.4)}}
-@keyframes nvSplashR{0%,44%{opacity:0;transform:none}50%{opacity:.9;transform:translate(5px,-7px)}75%,100%{opacity:0;transform:translate(12px,1px) scale(.4)}}
-.nv-ico[data-fx="spin"] svg{animation:nvSpin 1s cubic-bezier(.2,.75,.25,1) both}
-@keyframes nvSpin{0%{transform:perspective(80px) rotateY(0)}100%{transform:perspective(80px) rotateY(360deg) translateY(-1px) scale(1.08)}}
-.nv-ico[data-fx="glow"] svg{animation:nvHop .8s cubic-bezier(.3,1.4,.5,1) both;transform-origin:50% 100%}
-@keyframes nvHop{0%{transform:none}30%{transform:translateY(-5px) scale(1.04,.96)}55%{transform:translateY(0) scale(1.12,.88)}75%{transform:translateY(-2px) scale(.98,1.04)}100%{transform:translateY(-1px) scale(1.08)}}
-.nv-ico[data-fx="glow"] .nv-door{animation:nvDoor 1.3s ease both}
-@keyframes nvDoor{0%{fill:transparent}30%{fill:#FFF3A8}100%{fill:rgba(126,232,255,.6)}}
-.nv-ico[data-fx="wave"] svg{animation:nvWave .9s ease-in-out both;transform-origin:50% 92%}
-@keyframes nvWave{0%{transform:none}20%{transform:rotate(-15deg)}40%{transform:rotate(12deg)}60%{transform:rotate(-8deg)}80%{transform:rotate(4deg)}100%{transform:translateY(-1px) scale(1.08)}}
-.nimbus-nav[data-compact="true"] .nimbus-item{padding:0 13px}
-.nimbus-nav[data-compact="true"] .nimbus-label{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
-@media (max-width:520px){.nimbus-nav:not([data-compact="false"]) .nimbus-item{padding:0 13px}.nimbus-nav:not([data-compact="false"]) .nimbus-label{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}}
-@media (prefers-reduced-motion:reduce){.nv-ico svg,.nv-ico::before,.nv-ico::after,.nv-door{animation:none!important;transition:none}}
+.nimbus-nav{
+  --n-tint:rgba(255,255,255,.08);
+  --n-fg:#0B132B;
+  --n-fg-soft:rgba(11,19,43,.65);
+  --n-rim:rgba(196,241,103,.4);
+  position:relative;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:8px;
+  padding:6px 14px;
+  border-radius:999px;
+  isolation:isolate;
+  font-family:ui-sans-serif,-apple-system,"SF Pro Text","Segoe UI",system-ui,sans-serif;
+  -webkit-font-smoothing:antialiased;
+  user-select:none;
+  -webkit-tap-highlight-color:transparent;
+  width:100%;
+}
+.nimbus-nav[data-tone="dark"]{
+  --n-tint:rgba(12,18,10,.6);
+  --n-fg:#FFFFFF;
+  --n-fg-soft:rgba(235,245,225,.7);
+  --n-rim:rgba(196,241,103,.55);
+}
+.nimbus-glass{
+  position:absolute;
+  inset:0;
+  border-radius:inherit;
+  z-index:-2;
+  overflow:hidden;
+  background:var(--n-tint);
+  -webkit-backdrop-filter:blur(16px) saturate(1.3) brightness(1.05);
+  backdrop-filter:blur(16px) saturate(1.3) brightness(1.05);
+  box-shadow:inset 0 1px 1px var(--n-rim),
+             inset 0 0 0 1px rgba(196,241,103,.25),
+             0 12px 32px -10px rgba(0,0,0,.8),
+             0 0 24px -6px rgba(196,241,103,.28);
+}
+.nimbus-nav[data-refract="on"] .nimbus-glass{
+  -webkit-backdrop-filter:url(#nimbus-refract) blur(2px) saturate(1.2) brightness(1.08);
+  backdrop-filter:url(#nimbus-refract) blur(2px) saturate(1.2) brightness(1.08);
+}
+.nimbus-water{
+  position:absolute;
+  left:${-PAD}px;
+  top:${-PAD}px;
+  z-index:-1;
+  pointer-events:none;
+}
+.nimbus-nav[data-gl="off"] .nimbus-water{
+  display:none;
+}
+.nimbus-drop{
+  display:none;
+  position:absolute;
+  top:6px;
+  bottom:6px;
+  left:0;
+  border-radius:999px;
+  z-index:-1;
+  pointer-events:none;
+  will-change:transform,width;
+  background:radial-gradient(120% 140% at 30% 0%,rgba(255,255,255,.85),rgba(196,241,103,.4) 60%),rgba(196,241,103,.45);
+  box-shadow:inset 0 1px 1px rgba(255,255,255,.95),
+             inset 0 -2px 6px rgba(196,241,103,.5),
+             inset 0 0 0 1px rgba(196,241,103,.6),
+             0 6px 18px -4px rgba(196,241,103,.5);
+}
+.nimbus-nav[data-gl="off"] .nimbus-drop{
+  display:block;
+}
+.nimbus-slot-left,.nimbus-slot-right{
+  display:flex;
+  align-items:center;
+  z-index:1;
+}
+.nimbus-items-container{
+  display:flex;
+  align-items:center;
+  gap:2px;
+  z-index:1;
+}
+.nimbus-item{
+  position:relative;
+  z-index:1;
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  height:40px;
+  padding:0 16px;
+  border:0;
+  border-radius:999px;
+  background:none;
+  color:var(--n-fg-soft);
+  font-family:inherit;
+  font-weight:500;
+  font-size:14px;
+  line-height:1;
+  letter-spacing:-.01em;
+  text-decoration:none;
+  cursor:pointer;
+  transition:color .25s,transform .2s;
+}
+.nimbus-item:hover{
+  color:var(--n-fg);
+}
+.nimbus-item[aria-current="page"]{
+  color:#C4F167;
+  font-weight:600;
+}
+.nimbus-item:focus-visible{
+  outline:2px solid #C4F167;
+  outline-offset:2px;
+}
+.nv-ico{
+  position:relative;
+  display:inline-flex;
+  flex:none;
+}
+.nv-ico svg{
+  transition:transform .45s cubic-bezier(.3,1.6,.5,1);
+}
+.nimbus-item[aria-current="page"] .nv-ico svg{
+  transform:translateY(-1px) scale(1.08);
+}
+.nv-door{
+  fill:transparent;
+}
+.nv-ico[data-fx="pop"] svg{
+  animation:nvPop .5s cubic-bezier(.3,1.6,.5,1) both;
+}
+@keyframes nvPop{
+  0%{transform:scale(.72)}
+  60%{transform:scale(1.2)}
+  100%{transform:translateY(-1px) scale(1.08)}
+}
+.nv-ico[data-fx="plane"] svg{
+  animation:nvPlane 1.15s cubic-bezier(.55,0,.3,1) both;
+}
+@keyframes nvPlane{
+  0%{transform:none}
+  12%{transform:translate(-3px,2px) rotate(7deg)}
+  42%{transform:translate(64px,-26px) rotate(-24deg) scale(.9);opacity:0}
+  43%{transform:translate(-60px,16px) rotate(-12deg) scale(.9);opacity:0}
+  58%{opacity:1}
+  80%{transform:translate(3px,-1px) rotate(2deg)}
+  100%{transform:translateY(-1px) scale(1.08)}
+}
+.nv-ico[data-fx="plane"]::after{
+  content:"";
+  position:absolute;
+  left:55%;
+  top:48%;
+  height:2px;
+  width:46px;
+  border-radius:2px;
+  transform-origin:0 50%;
+  background:linear-gradient(90deg,rgba(255,255,255,0),rgba(196,241,103,.95));
+  animation:nvTrail 1.15s ease-out both;
+  pointer-events:none;
+}
+@keyframes nvTrail{
+  0%,8%{opacity:0;transform:rotate(-22deg) scaleX(0)}
+  30%{opacity:.9;transform:rotate(-22deg) scaleX(1)}
+  55%,100%{opacity:0;transform:rotate(-22deg) translateX(30px) scaleX(.2)}
+}
+.nv-ico[data-fx="drop"] svg{
+  animation:nvDrop .95s cubic-bezier(.4,0,.3,1) both;
+  transform-origin:50% 100%;
+}
+@keyframes nvDrop{
+  0%{transform:translateY(-1px)}
+  26%{transform:translateY(-13px) scale(.88,1.12)}
+  46%{transform:translateY(3px) scale(1.3,.68)}
+  62%{transform:translateY(-3px) scale(.92,1.08)}
+  80%{transform:translateY(0) scale(1.04,.97)}
+  100%{transform:translateY(-1px) scale(1.08)}
+}
+.nv-ico[data-fx="drop"]::before,.nv-ico[data-fx="drop"]::after{
+  content:"";
+  position:absolute;
+  bottom:0;
+  left:50%;
+  width:4px;
+  height:4px;
+  margin-left:-2px;
+  border-radius:50%;
+  background:currentColor;
+  opacity:0;
+  pointer-events:none;
+}
+.nv-ico[data-fx="drop"]::before{
+  animation:nvSplashL .95s ease-out both;
+}
+.nv-ico[data-fx="drop"]::after{
+  animation:nvSplashR .95s ease-out both;
+}
+@keyframes nvSplashL{
+  0%,44%{opacity:0;transform:none}
+  50%{opacity:.9;transform:translate(-5px,-6px)}
+  75%,100%{opacity:0;transform:translate(-11px,1px) scale(.4)}
+}
+@keyframes nvSplashR{
+  0%,44%{opacity:0;transform:none}
+  50%{opacity:.9;transform:translate(5px,-7px)}
+  75%,100%{opacity:0;transform:translate(12px,1px) scale(.4)}
+}
+.nv-ico[data-fx="spin"] svg{
+  animation:nvSpin 1s cubic-bezier(.2,.75,.25,1) both;
+}
+@keyframes nvSpin{
+  0%{transform:perspective(80px) rotateY(0)}
+  100%{transform:perspective(80px) rotateY(360deg) translateY(-1px) scale(1.08)}
+}
+.nv-ico[data-fx="glow"] svg{
+  animation:nvHop .8s cubic-bezier(.3,1.4,.5,1) both;
+  transform-origin:50% 100%;
+}
+@keyframes nvHop{
+  0%{transform:none}
+  30%{transform:translateY(-5px) scale(1.04,.96)}
+  55%{transform:translateY(0) scale(1.12,.88)}
+  75%{transform:translateY(-2px) scale(.98,1.04)}
+  100%{transform:translateY(-1px) scale(1.08)}
+}
+.nv-ico[data-fx="glow"] .nv-door{
+  animation:nvDoor 1.3s ease both;
+}
+@keyframes nvDoor{
+  0%{fill:transparent}
+  30%{fill:#FFF3A8}
+  100%{fill:rgba(196,241,103,.8)}
+}
+.nv-ico[data-fx="wave"] svg{
+  animation:nvWave .9s ease-in-out both;
+  transform-origin:50% 92%;
+}
+@keyframes nvWave{
+  0%{transform:none}
+  20%{transform:rotate(-15deg)}
+  40%{transform:rotate(12deg)}
+  60%{transform:rotate(-8deg)}
+  80%{transform:rotate(4deg)}
+  100%{transform:translateY(-1px) scale(1.08)}
+}
+.nimbus-nav[data-compact="true"] .nimbus-item{
+  padding:0 13px;
+}
+.nimbus-nav[data-compact="true"] .nimbus-label{
+  position:absolute;
+  width:1px;
+  height:1px;
+  overflow:hidden;
+  clip:rect(0 0 0 0);
+  white-space:nowrap;
+}
+@media (max-width:768px){
+  .nimbus-items-container{
+    display:none;
+  }
+}
+@media (prefers-reduced-motion:reduce){
+  .nv-ico svg,.nv-ico::before,.nv-ico::after,.nv-door{
+    animation:none!important;
+    transition:none;
+  }
+}
 `
 
-/* ---------- the water shader ---------- */
+/* ---------- the lime water shader (No Blue Shade) ---------- */
 const VERT = `attribute vec2 a;void main(){gl_Position=vec4(a,0.,1.);}`
 const FRAG = `precision highp float;
 uniform vec2 uRes;uniform float uDpr;uniform float uTime;uniform vec4 uPill;
@@ -138,20 +360,20 @@ void main(){
  float spec=pow(max(dot(reflect(-normalize(vec3(-.45,-.8,.85)),n),V),0.),70.);
  float spec2=pow(max(dot(reflect(-normalize(vec3(.6,.75,.7)),n),V),0.),22.)*.3;
  float fres=clamp((1.-n.z)*4.,0.,1.);
- vec3 irid=.5+.5*cos(6.2831*(vec3(0.,.33,.67)+fres*.85+p.x*.0028+uTime*.035));
+ vec3 irid=mix(vec3(.77,.95,.40),vec3(.95,1.0,.65),.5+.5*sin(fres*3.5+p.x*.003+uTime*.5));
  float pm=smoothstep(1.,-1.,dp);float dm=smoothstep(1.,-1.,dd)*smoothstep(1.,-2.,dp);
- float sh=smoothstep(9.,-9.,dropD(p-vec2(0.,5.)))*(1.-dm)*pm*(.11+.07*uDark);
- vec3 c=vec3(0.,.14,.36)*sh;float a=sh;
+ float sh=smoothstep(9.,-9.,dropD(p-vec2(0.,5.)))*(1.-dm)*pm*(.14+.09*uDark);
+ vec3 c=vec3(.08,.16,.03)*sh;float a=sh;
  float pa=clamp(pm*(fres*.5+spec*.9+spec2),0.,1.);
- c=mix(vec3(1.),irid,.5*fres)*pa+c*(1.-pa);a=pa+a*(1.-pa);
+ c=mix(vec3(1.),irid,.45*fres)*pa+c*(1.-pa);a=pa+a*(1.-pa);
  float th=lens(dd,11.);
  float cs=caus((p+n.xy*th*18.)*.085,uTime*.9);
- vec3 tint=mix(vec3(.80,.95,1.),vec3(.55,.82,1.),uDark);
+ vec3 tint=mix(vec3(.92,.98,.80),vec3(.77,.95,.40),uDark);
  float rim=dm*(1.-smoothstep(0.,8.,-dd));
  float cres=dm*smoothstep(.12,.55,dot(n.xy,normalize(vec2(.55,.85))))*smoothstep(0.,3.,-dd);
  float body=.5+.5*clamp(-n.y*3.,-1.,1.);
- float da=dm*(.26+.14*body)*(1.-.35*uDark);vec3 dc=mix(tint,vec3(1.),body*.6);
- float la=rim*.22;vec3 lc=mix(vec3(0.,.42,.78),vec3(.1,.55,.95),uDark);dc=lc*la+dc*da*(1.-la);da=la+da*(1.-la);
+ float da=dm*(.28+.16*body)*(1.-.25*uDark);vec3 dc=mix(tint,vec3(1.),body*.55);
+ float la=rim*.28;vec3 lc=mix(vec3(.55,.85,.15),vec3(.77,.95,.40),uDark);dc=lc*la+dc*da*(1.-la);da=la+da*(1.-la);
  la=clamp(cres*.7+smoothstep(.6,1.,cs)*.28*th*dm,0.,1.);dc=vec3(1.)*la+dc*(1.-la);da=la+da*(1.-la);
  la=clamp(dm*(spec*1.2+spec2*.5),0.,1.);dc=vec3(1.)*la+dc*(1.-la);da=la+da*(1.-la);
  la=dm*smoothstep(-2.,0.,dd)*.4;dc=mix(vec3(1.),irid,.35)*la+dc*(1.-la);da=la+da*(1.-la);
@@ -234,6 +456,8 @@ export function LiquidNavbar({
   sound = false,
   className,
   style,
+  leftContent,
+  rightContent,
 }: LiquidNavbarProps) {
   const [inner, setInner] = React.useState(defaultActive)
   const current = active ?? inner
@@ -285,8 +509,12 @@ export function LiquidNavbar({
       g.drawArrays(g.TRIANGLES, 0, 3)
     } else if (dropRef.current) {
       const left = Math.min(s.a.x, s.b.x) - s.q - r - PAD
+      const top = T.cy - PAD - r
       const width = sep + 2 * (s.q + r)
+      const height = r * 2
       dropRef.current.style.width = `${width}px`
+      dropRef.current.style.height = `${height}px`
+      dropRef.current.style.top = `${top}px`
       dropRef.current.style.transform = `translateX(${left}px) scaleY(${s.sy.s})`
     }
   }, [])
@@ -358,20 +586,24 @@ export function LiquidNavbar({
     s.rips.forEach((p) => (p.age += dt))
     s.rips = s.rips.filter((p) => p.age < 2.4)
     const target = s.mouse.on ? 1 : 0
-    s.mouse.s += (target - s.mouse.s) * Math.min(1, dt * 7)
+    s.mouse.s += (target - s.mouse.s) * Math.min(1, dt * 10)
+    if (Math.abs(target - s.mouse.s) > 0.01) still = false
+    if (!s.reduce) still = false
+    return still
   }, [])
 
+  /* ---- loop ---- */
   const loop = React.useCallback(() => {
     const s = st.current
-    if (s.raf) return
-    s.last = performance.now()
+    if (s.raf || !s.visible) return
+    let prev = performance.now()
     const tick = (now: number) => {
-      const dt = Math.min((now - s.last) / 1000, 1 / 30)
+      const dt = Math.min((now - prev) / 1000, 0.033)
+      prev = now
       s.last = now
       step(dt, now)
       draw()
       const busy = s.moving || s.rips.length || s.sats.length || s.mouse.s > 0.01
-      // ambient water keeps moving while visible; reduced-motion only animates on change
       if (s.visible && (!s.reduce || busy)) s.raf = requestAnimationFrame(tick)
       else s.raf = 0
     }
@@ -381,17 +613,23 @@ export function LiquidNavbar({
   /* ---- layout ---- */
   const measure = React.useCallback(() => {
     const nav = navRef.current
-    const el = itemRefs.current[current]
-    if (!nav || !el) return
+    if (!nav) return
     const s = st.current
-    s.w = nav.offsetWidth
-    s.h = nav.offsetHeight
+    const navRect = nav.getBoundingClientRect()
+    s.w = navRect.width
+    s.h = navRect.height
+
+    const el = itemRefs.current[current]
+    if (!el) return
+
+    const elRect = el.getBoundingClientRect()
     const T = s.t
-    T.r = el.offsetHeight / 2
-    T.q = Math.max(0, el.offsetWidth / 2 - T.r)
-    T.cy = PAD + el.offsetTop + el.offsetHeight / 2
-    const nx = PAD + el.offsetLeft + el.offsetWidth / 2
+    T.r = elRect.height / 2
+    T.q = Math.max(0, elRect.width / 2 - T.r)
+    T.cy = PAD + (elRect.top - navRect.top) + elRect.height / 2
+    const nx = PAD + (elRect.left - navRect.left) + elRect.width / 2
     if (!s.ready) {
+      s.t.x = nx
       s.a.x = s.b.x = nx
       s.q = T.q
       s.ready = true
@@ -516,6 +754,7 @@ export function LiquidNavbar({
     const s = st.current
     s.mouse.x = p.x
     s.mouse.y = p.y
+    s.mouse.s = 1
     s.mouse.on = true
     loop()
   }
@@ -546,31 +785,46 @@ export function LiquidNavbar({
       <span className="nimbus-glass" aria-hidden="true" />
       <canvas className="nimbus-water" ref={canvasRef} aria-hidden="true" />
       <span className="nimbus-drop" ref={dropRef} aria-hidden="true" />
-      {items.map((it, i) => {
-        const kind = it.fx ?? "pop"
-        const playing = fx.i === i && kind !== "none"
-        const props = {
-          ref: (el: HTMLElement | null) => { itemRefs.current[i] = el },
-          className: "nimbus-item",
-          "aria-current": i === current ? ("page" as const) : undefined,
-          onClick: () => select(i),
-        }
-        const content = (
-          <>
-            {it.icon && (
-              <span className="nv-ico" key={playing ? fx.n : 0} data-fx={playing ? kind : undefined} ref={(el) => { iconRefs.current[i] = el }}>
-                {it.icon}
-              </span>
-            )}
-            <span className="nimbus-label">{it.label}</span>
-          </>
-        )
-        return it.href ? (
-          <a key={it.label + i} {...(props as any)} href={it.href} aria-label={it.label}>{content}</a>
-        ) : (
-          <button key={it.label + i} {...(props as any)} type="button" aria-label={it.label}>{content}</button>
-        )
-      })}
+
+      {leftContent && (
+        <div className="nimbus-slot-left">
+          {leftContent}
+        </div>
+      )}
+
+      <div className="nimbus-items-container">
+        {items.map((it, i) => {
+          const kind = it.fx ?? "pop"
+          const playing = fx.i === i && kind !== "none"
+          const props = {
+            ref: (el: HTMLElement | null) => { itemRefs.current[i] = el },
+            className: "nimbus-item",
+            "aria-current": i === current ? ("page" as const) : undefined,
+            onClick: () => select(i),
+          }
+          const content = (
+            <>
+              {it.icon && (
+                <span className="nv-ico" key={playing ? fx.n : 0} data-fx={playing ? kind : undefined} ref={(el) => { iconRefs.current[i] = el }}>
+                  {it.icon}
+                </span>
+              )}
+              <span className="nimbus-label">{it.label}</span>
+            </>
+          )
+          return it.href ? (
+            <a key={it.label + i} {...(props as any)} href={it.href} aria-label={it.label}>{content}</a>
+          ) : (
+            <button key={it.label + i} {...(props as any)} type="button" aria-label={it.label}>{content}</button>
+          )
+        })}
+      </div>
+
+      {rightContent && (
+        <div className="nimbus-slot-right">
+          {rightContent}
+        </div>
+      )}
     </nav>
   )
 }

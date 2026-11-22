@@ -12,31 +12,30 @@ export default function Demo() {
         justifyContent: "center",
         gap: 28,
         padding: "0 16px",
-        background: "#DCEBF5",
+        background: "#080C07",
       }}
     >
-      <LiquidNavbar
-        tone="light"
-        defaultActive={0}
-        sound={false}
-        items={[
-          { label: "Home", icon: NimbusIcons.home, fx: "glow" },
-          { label: "Explore", icon: NimbusIcons.globe, fx: "spin" },
-          { label: "Flights", icon: NimbusIcons.plane, fx: "plane" },
-          { label: "Weather", icon: NimbusIcons.drop, fx: "drop" },
-          { label: "Profile", icon: NimbusIcons.user, fx: "wave" },
-        ]}
-      />
+      <div style={{ width: "100%", maxWidth: "680px" }}>
+        <LiquidNavbar
+          tone="dark"
+          defaultActive={0}
+          sound={false}
+          items={[
+            { label: "Home", icon: NimbusIcons.home, fx: "glow" },
+            { label: "Explore", icon: NimbusIcons.globe, fx: "spin" },
+            { label: "Flights", icon: NimbusIcons.plane, fx: "plane" },
+            { label: "Weather", icon: NimbusIcons.drop, fx: "drop" },
+            { label: "Profile", icon: NimbusIcons.user, fx: "wave" },
+          ]}
+        />
+      </div>
       <span
         style={{
           font: "500 12px/1 ui-sans-serif, -apple-system, 'Segoe UI', system-ui, sans-serif",
-          color: "rgba(11,19,43,.5)",
+          color: "rgba(196,241,103,.7)",
         }}
       >
-        by{" "}
-        <a href="https://guglielmogiannattasio.it" target="_blank" rel="noopener noreferrer" style={{ color: "rgba(11,19,43,.7)" }}>
-          guglielmogiannattasio.it
-        </a>
+        Jobzy Nimbus UI · Lime Waterline Shader (#C4F167)
       </span>
     </div>
   )
