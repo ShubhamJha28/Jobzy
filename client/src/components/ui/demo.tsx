@@ -1,4 +1,5 @@
 import { LiquidNavbar, NimbusIcons } from "@/components/ui/liquid-glass-navbar"
+import { AntiMetalButton } from "@/components/ui/anti-metal-button"
 
 export default function Demo() {
   return (
@@ -10,7 +11,7 @@ export default function Demo() {
         flexDirection: "column",
         alignItems: "center",
         justifyContent: "center",
-        gap: 28,
+        gap: 36,
         padding: "0 16px",
         background: "#080C07",
       }}
@@ -29,14 +30,26 @@ export default function Demo() {
           ]}
         />
       </div>
-      <span
-        style={{
-          font: "500 12px/1 ui-sans-serif, -apple-system, 'Segoe UI', system-ui, sans-serif",
-          color: "rgba(196,241,103,.7)",
-        }}
-      >
-        Jobzy Nimbus UI · Lime Waterline Shader (#C4F167)
-      </span>
+
+      <div className="flex flex-col items-center gap-4">
+        <span
+          style={{
+            font: "500 12px/1 ui-sans-serif, -apple-system, 'Segoe UI', system-ui, sans-serif",
+            color: "rgba(196,241,103,.7)",
+          }}
+        >
+          Jobzy UI · AntiMetal Button Component
+        </span>
+        <div className="flex flex-wrap items-center justify-center gap-4">
+          <AntiMetalButton />
+          <AntiMetalButton
+            label="Analyze My Resume"
+            className="w-56"
+            accentFrom="#C4F167"
+            accentTo="#A8DE3B"
+          />
+        </div>
+      </div>
     </div>
   )
 }

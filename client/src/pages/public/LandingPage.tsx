@@ -4,6 +4,7 @@ import { JobzyButton } from '../../components/JobzyButton';
 import { JobzyCard } from '../../components/JobzyCard';
 import { ScoreIndicator } from '../../components/ScoreIndicator';
 import { SkillBadge } from '../../components/SkillBadge';
+import { AntiMetalButton } from '../../components/ui/anti-metal-button';
 import {
   Sparkles,
   ArrowRight,
@@ -42,12 +43,16 @@ export const LandingPage: React.FC = () => {
 
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mt-10">
           <Link to="/candidate/analyze">
-            <JobzyButton size="lg" variant="primary" rightIcon={<ArrowRight className="w-4 h-4" />}>
-              Analyze My Resume
-            </JobzyButton>
+            <AntiMetalButton
+              label="Analyze My Resume"
+              className="h-12 w-60 text-sm font-semibold shadow-lime-glow"
+              accentFrom="#C4F167"
+              accentTo="#A8DE3B"
+              dotColor="#000000"
+            />
           </Link>
           <Link to="/candidate/jobs">
-            <JobzyButton size="lg" variant="secondary">
+            <JobzyButton size="lg" variant="secondary" className="h-12">
               Explore JOBZY Platform
             </JobzyButton>
           </Link>
