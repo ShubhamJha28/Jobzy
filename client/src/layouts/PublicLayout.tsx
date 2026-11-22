@@ -5,7 +5,7 @@ import { JobzyLogo } from '../components/JobzyLogo';
 
 export const PublicLayout: React.FC = () => {
   return (
-    <div className="min-h-screen flex flex-col bg-[#000000] text-white">
+    <div className="min-h-screen flex flex-col bg-transparent text-[var(--text-primary)] transition-colors duration-250">
       <JobzyNavbar />
 
       <main className="flex-1">
@@ -13,7 +13,7 @@ export const PublicLayout: React.FC = () => {
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-[#1e1e1e] bg-[#080808] py-12 px-4 sm:px-6 lg:px-8">
+      <footer className="border-t border-[#1e1e1e] bg-[#080808] py-12 px-4 sm:px-6 lg:px-8 transition-colors duration-250">
         <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-8">
           <div className="space-y-3">
             <JobzyLogo size="md" withTagline={true} />

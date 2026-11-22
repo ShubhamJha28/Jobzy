@@ -5,14 +5,16 @@ type Theme = 'dark' | 'light';
 interface ThemeContextType {
   theme: Theme;
   toggleTheme: () => void;
+  setTheme: (theme: Theme) => void;
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [theme, setTheme] = useState<Theme>(() => {
+  const [theme, setThemeState] = useState<Theme>(() => {
     const saved = localStorage.getItem('jobzy_theme') as Theme;
-    return saved === 'light' ? 'light' : 'dark';
+    if (saved === 'light' || saved === 'dark') return saved;
+    return 'dark';
   });
 
   useEffect(() => {
@@ -20,19 +22,29 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     if (theme === 'light') {
       root.classList.remove('dark');
       root.classList.add('light');
+      root.setAttribute('data-theme', 'light');
+      document.body.classList.remove('dark');
+      document.body.classList.add('light');
     } else {
       root.classList.remove('light');
       root.classList.add('dark');
+      root.setAttribute('data-theme', 'dark');
+      document.body.classList.remove('light');
+      document.body.classList.add('dark');
     }
     localStorage.setItem('jobzy_theme', theme);
   }, [theme]);
 
   const toggleTheme = () => {
-    setTheme((prev) => (prev === 'dark' ? 'light' : 'dark'));
+    setThemeState((prev) => (prev === 'dark' ? 'light' : 'dark'));
+  };
+
+  const setTheme = (newTheme: Theme) => {
+    setThemeState(newTheme);
   };
 
   return (
-    <ThemeContext.Provider value={{ theme, toggleTheme }}>
+    <ThemeContext.Provider value={{ theme, toggleTheme, setTheme }}>
       {children}
     </ThemeContext.Provider>
   );

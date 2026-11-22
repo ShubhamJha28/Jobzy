@@ -2,8 +2,8 @@
 
 /**
  * Nimbus UI · Liquid Navbar — "Waterline"
- * Enhanced for Jobzy: Whole Navbar Liquid Effect with Lime Water Physics (#C4F167).
- * Fully functional click routing, audio synthesis, and smooth section scrolling.
+ * Enhanced for Jobzy: Whole Navbar Liquid Effect with Dual Light & Dark Mode Support.
+ * Lime Water Physics (#C4F167) in Dark Mode, Crisp Forest-Lime & Refraction in Light Mode.
  */
 
 import * as React from "react"
@@ -59,13 +59,13 @@ const DEFAULT_ITEMS: LiquidNavItem[] = [
 
 const PAD = 14 // canvas bleed around the pill, for shadows and ripples
 
-/* ---------- styles (Lime Glass Theme) ---------- */
+/* ---------- styles (Dual Light & Dark Glass Theme) ---------- */
 const NIMBUS_CSS = `
 .nimbus-nav{
-  --n-tint:rgba(255,255,255,.08);
-  --n-fg:#0B132B;
-  --n-fg-soft:rgba(11,19,43,.65);
-  --n-rim:rgba(196,241,103,.4);
+  --n-tint:rgba(255,255,255,.85);
+  --n-fg:#0F172A;
+  --n-fg-soft:rgba(15,23,42,.7);
+  --n-rim:rgba(132,204,22,.55);
   position:relative;
   display:flex;
   align-items:center;
@@ -95,6 +95,12 @@ const NIMBUS_CSS = `
   background:var(--n-tint);
   -webkit-backdrop-filter:blur(16px) saturate(1.3) brightness(1.05);
   backdrop-filter:blur(16px) saturate(1.3) brightness(1.05);
+  box-shadow:inset 0 1px 1px var(--n-rim),
+             inset 0 0 0 1px rgba(132,204,22,.2),
+             0 8px 24px -6px rgba(0,0,0,.1),
+             0 0 16px -4px rgba(132,204,22,.2);
+}
+.nimbus-nav[data-tone="dark"] .nimbus-glass{
   box-shadow:inset 0 1px 1px var(--n-rim),
              inset 0 0 0 1px rgba(196,241,103,.25),
              0 12px 32px -10px rgba(0,0,0,.8),
@@ -129,6 +135,13 @@ const NIMBUS_CSS = `
              inset 0 -2px 6px rgba(196,241,103,.5),
              inset 0 0 0 1px rgba(196,241,103,.6),
              0 6px 18px -4px rgba(196,241,103,.5);
+}
+.nimbus-nav[data-tone="light"] .nimbus-drop{
+  background:radial-gradient(120% 140% at 30% 0%,rgba(255,255,255,.95),rgba(132,204,22,.3) 60%),rgba(132,204,22,.35);
+  box-shadow:inset 0 1px 1px #fff,
+             inset 0 -2px 6px rgba(132,204,22,.4),
+             inset 0 0 0 1px rgba(132,204,22,.4),
+             0 6px 16px -4px rgba(132,204,22,.3);
 }
 .nimbus-nav[data-gl="off"] .nimbus-drop{
   display:block;
@@ -173,12 +186,16 @@ const NIMBUS_CSS = `
 .nimbus-item:hover{
   color:var(--n-fg);
 }
-.nimbus-item[aria-current="page"]{
+.nimbus-nav[data-tone="dark"] .nimbus-item[aria-current="page"]{
   color:#C4F167;
   font-weight:600;
 }
+.nimbus-nav[data-tone="light"] .nimbus-item[aria-current="page"]{
+  color:#3F6212;
+  font-weight:700;
+}
 .nimbus-item:focus-visible{
-  outline:2px solid #C4F167;
+  outline:2px solid var(--n-rim);
   outline-offset:2px;
 }
 .nv-ico{

@@ -189,12 +189,16 @@ export const JobzyNavbar: React.FC = () => {
     navigate('/login');
   };
 
+  const isDark = theme === 'dark';
+
   return (
-    <header className="sticky top-0 z-40 w-full pt-3 pb-2 px-3 sm:px-6 lg:px-8 bg-black/40 backdrop-blur-md">
+    <header className={`sticky top-0 z-40 w-full pt-3 pb-2 px-3 sm:px-6 lg:px-8 transition-colors duration-250 ${
+      isDark ? 'bg-black/40 backdrop-blur-md' : 'bg-white/60 backdrop-blur-md border-b border-black/[0.04]'
+    }`}>
       <div className="max-w-7xl mx-auto">
         <LiquidNavbar
           items={activeNavItems}
-          tone={theme === 'dark' ? 'dark' : 'light'}
+          tone={isDark ? 'dark' : 'light'}
           active={getActiveIndex()}
           onChange={handleNavChange}
           sound={false}
@@ -205,31 +209,43 @@ export const JobzyNavbar: React.FC = () => {
           }
           rightContent={
             <div className="flex items-center gap-2 sm:gap-3 pr-1" onClick={(e) => e.stopPropagation()}>
-              {/* Theme Toggle */}
+              {/* Theme Toggle Button */}
               <button
                 type="button"
                 onClick={(e) => {
                   e.stopPropagation();
                   toggleTheme();
                 }}
-                className="p-2 rounded-xl text-[#A3A3A3] hover:text-[#C4F167] hover:bg-[#161616]/60 border border-transparent hover:border-[#C4F167]/30 transition-all cursor-pointer relative z-20"
-                title="Toggle Dark/Light Mode"
-                aria-label="Toggle Dark/Light Mode"
+                className={`p-2 rounded-xl border transition-all cursor-pointer relative z-20 ${
+                  isDark
+                    ? 'text-[#A3A3A3] hover:text-[#C4F167] hover:bg-[#161616]/60 border-transparent hover:border-[#C4F167]/30'
+                    : 'text-[#475569] hover:text-[#0F172A] hover:bg-black/5 border-transparent hover:border-black/10'
+                }`}
+                title={isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+                aria-label="Toggle Theme"
               >
-                {theme === 'dark' ? <Sun className="w-4 h-4 text-[#C4F167]" /> : <Moon className="w-4 h-4" />}
+                {isDark ? (
+                  <Sun className="w-4 h-4 text-[#C4F167]" />
+                ) : (
+                  <Moon className="w-4 h-4 text-[#0F172A]" />
+                )}
               </button>
 
               {!user ? (
                 <div className="flex items-center gap-2 relative z-20">
                   <Link
                     to="/login"
-                    className="px-3.5 py-1.5 text-xs font-semibold text-[#D1D1D1] hover:text-white transition-colors cursor-pointer rounded-lg hover:bg-white/5 inline-flex items-center justify-center"
+                    className={`px-3.5 py-1.5 text-xs font-semibold transition-colors cursor-pointer rounded-lg inline-flex items-center justify-center ${
+                      isDark
+                        ? 'text-[#D1D1D1] hover:text-white hover:bg-white/5'
+                        : 'text-[#475569] hover:text-[#0F172A] hover:bg-black/5'
+                    }`}
                   >
                     Sign In
                   </Link>
                   <Link
                     to="/register"
-                    className="px-4 py-1.5 text-xs font-bold text-black bg-[#C4F167] hover:bg-[#b0df52] hover:shadow-[0_0_18px_rgba(196,241,103,0.45)] transition-all rounded-full cursor-pointer inline-flex items-center justify-center"
+                    className="px-4 py-1.5 text-xs font-bold text-black bg-[#C4F167] hover:bg-[#b0df52] hover:shadow-[0_0_18px_rgba(196,241,103,0.45)] transition-all rounded-full cursor-pointer inline-flex items-center justify-center shadow-sm"
                   >
                     Get Started
                   </Link>
@@ -245,7 +261,11 @@ export const JobzyNavbar: React.FC = () => {
                         setShowNotifications(!showNotifications);
                         setShowUserMenu(false);
                       }}
-                      className="p-2 rounded-xl text-[#A3A3A3] hover:text-white hover:bg-[#161616] border border-transparent hover:border-[#2a2a2a] transition-all cursor-pointer relative"
+                      className={`p-2 rounded-xl border transition-all cursor-pointer relative ${
+                        isDark
+                          ? 'text-[#A3A3A3] hover:text-white hover:bg-[#161616] border-transparent hover:border-[#2a2a2a]'
+                          : 'text-[#475569] hover:text-[#0F172A] hover:bg-black/5 border-transparent hover:border-black/10'
+                      }`}
                       aria-label="Notifications"
                     >
                       <Bell className="w-4 h-4" />
@@ -257,17 +277,23 @@ export const JobzyNavbar: React.FC = () => {
                     {showNotifications && (
                       <div
                         onClick={(e) => e.stopPropagation()}
-                        className="absolute right-0 mt-2 w-80 bg-[#111111] border border-[#2a2a2a] rounded-2xl shadow-2xl p-4 z-50 animate-in fade-in duration-150"
+                        className={`absolute right-0 mt-2 w-80 rounded-2xl shadow-2xl p-4 z-50 animate-in fade-in duration-150 border ${
+                          isDark
+                            ? 'bg-[#111111] border-[#2a2a2a] text-white'
+                            : 'bg-white border-slate-200 text-slate-900 shadow-xl'
+                        }`}
                       >
-                        <div className="flex items-center justify-between pb-3 border-b border-[#222222]">
-                          <span className="text-xs font-bold text-white uppercase tracking-wider">
+                        <div className={`flex items-center justify-between pb-3 border-b ${
+                          isDark ? 'border-[#222222]' : 'border-slate-100'
+                        }`}>
+                          <span className="text-xs font-bold uppercase tracking-wider">
                             Notifications ({unreadCount})
                           </span>
                           {unreadCount > 0 && (
                             <button
                               type="button"
                               onClick={markAllRead}
-                              className="text-[11px] text-[#C4F167] hover:underline cursor-pointer"
+                              className="text-[11px] text-[#84CC16] dark:text-[#C4F167] hover:underline cursor-pointer font-semibold"
                             >
                               Mark all read
                             </button>
@@ -282,11 +308,15 @@ export const JobzyNavbar: React.FC = () => {
                                 key={n.id}
                                 className={`p-2.5 rounded-xl text-xs border ${
                                   !n.readAt
-                                    ? 'bg-[#181818] border-[#C4F167]/30 text-white'
-                                    : 'bg-transparent border-[#222222] text-[#A3A3A3]'
+                                    ? isDark
+                                      ? 'bg-[#181818] border-[#C4F167]/30 text-white'
+                                      : 'bg-lime-50/80 border-lime-300 text-slate-900'
+                                    : isDark
+                                    ? 'bg-transparent border-[#222222] text-[#A3A3A3]'
+                                    : 'bg-slate-50 border-slate-200 text-slate-600'
                                 }`}
                               >
-                                <p className="font-semibold text-white">{n.title}</p>
+                                <p className="font-semibold">{n.title}</p>
                                 <p className="text-[11px] mt-0.5 line-clamp-2">{n.message}</p>
                               </div>
                             ))
@@ -305,7 +335,11 @@ export const JobzyNavbar: React.FC = () => {
                         setShowUserMenu(!showUserMenu);
                         setShowNotifications(false);
                       }}
-                      className="flex items-center gap-2 p-1.5 rounded-xl bg-[#141414] border border-[#242424] hover:border-[#383838] transition-colors cursor-pointer"
+                      className={`flex items-center gap-2 p-1.5 rounded-xl border transition-colors cursor-pointer ${
+                        isDark
+                          ? 'bg-[#141414] border-[#242424] hover:border-[#383838]'
+                          : 'bg-white border-slate-200 hover:border-slate-300 shadow-sm'
+                      }`}
                       aria-label="User Menu"
                     >
                       <img
@@ -313,7 +347,7 @@ export const JobzyNavbar: React.FC = () => {
                         alt={user.name}
                         className="w-7 h-7 rounded-lg object-cover"
                       />
-                      <span className="text-xs font-semibold text-white max-w-[100px] truncate hidden sm:inline">
+                      <span className="text-xs font-semibold max-w-[100px] truncate hidden sm:inline">
                         {user.name}
                       </span>
                       <ChevronDown className="w-3.5 h-3.5 text-[#A3A3A3]" />
@@ -322,10 +356,14 @@ export const JobzyNavbar: React.FC = () => {
                     {showUserMenu && (
                       <div
                         onClick={(e) => e.stopPropagation()}
-                        className="absolute right-0 mt-2 w-56 bg-[#111111] border border-[#2a2a2a] rounded-2xl shadow-2xl p-2 z-50 animate-in fade-in duration-150"
+                        className={`absolute right-0 mt-2 w-56 rounded-2xl shadow-2xl p-2 z-50 animate-in fade-in duration-150 border ${
+                          isDark
+                            ? 'bg-[#111111] border-[#2a2a2a] text-white'
+                            : 'bg-white border-slate-200 text-slate-900 shadow-xl'
+                        }`}
                       >
-                        <div className="px-3 py-2 border-b border-[#222222]">
-                          <p className="text-xs font-bold text-white truncate">{user.name}</p>
+                        <div className={`px-3 py-2 border-b ${isDark ? 'border-[#222222]' : 'border-slate-100'}`}>
+                          <p className="text-xs font-bold truncate">{user.name}</p>
                           <p className="text-[11px] text-[#A3A3A3] truncate">{user.email}</p>
                           <span className="inline-block mt-1 text-[10px] font-bold text-[#000000] bg-[#C4F167] px-2 py-0.5 rounded-md uppercase">
                             {user.role}
@@ -337,9 +375,13 @@ export const JobzyNavbar: React.FC = () => {
                             <Link
                               to="/candidate/dashboard"
                               onClick={() => setShowUserMenu(false)}
-                              className="flex items-center gap-2.5 px-3 py-2 text-xs text-[#D1D1D1] hover:text-white hover:bg-[#1a1a1a] rounded-lg transition-colors"
+                              className={`flex items-center gap-2.5 px-3 py-2 text-xs rounded-lg transition-colors ${
+                                isDark
+                                  ? 'text-[#D1D1D1] hover:text-white hover:bg-[#1a1a1a]'
+                                  : 'text-slate-700 hover:text-slate-900 hover:bg-slate-50'
+                              }`}
                             >
-                              <Briefcase className="w-3.5 h-3.5 text-[#C4F167]" />
+                              <Briefcase className="w-3.5 h-3.5 text-[#84CC16] dark:text-[#C4F167]" />
                               Candidate Dashboard
                             </Link>
                           )}
@@ -347,9 +389,13 @@ export const JobzyNavbar: React.FC = () => {
                             <Link
                               to="/recruiter/dashboard"
                               onClick={() => setShowUserMenu(false)}
-                              className="flex items-center gap-2.5 px-3 py-2 text-xs text-[#D1D1D1] hover:text-white hover:bg-[#1a1a1a] rounded-lg transition-colors"
+                              className={`flex items-center gap-2.5 px-3 py-2 text-xs rounded-lg transition-colors ${
+                                isDark
+                                  ? 'text-[#D1D1D1] hover:text-white hover:bg-[#1a1a1a]'
+                                  : 'text-slate-700 hover:text-slate-900 hover:bg-slate-50'
+                              }`}
                             >
-                              <Layers className="w-3.5 h-3.5 text-[#C4F167]" />
+                              <Layers className="w-3.5 h-3.5 text-[#84CC16] dark:text-[#C4F167]" />
                               Recruiter Dashboard
                             </Link>
                           )}
@@ -357,22 +403,26 @@ export const JobzyNavbar: React.FC = () => {
                             <Link
                               to="/admin/dashboard"
                               onClick={() => setShowUserMenu(false)}
-                              className="flex items-center gap-2.5 px-3 py-2 text-xs text-[#D1D1D1] hover:text-white hover:bg-[#1a1a1a] rounded-lg transition-colors"
+                              className={`flex items-center gap-2.5 px-3 py-2 text-xs rounded-lg transition-colors ${
+                                isDark
+                                  ? 'text-[#D1D1D1] hover:text-white hover:bg-[#1a1a1a]'
+                                  : 'text-slate-700 hover:text-slate-900 hover:bg-slate-50'
+                              }`}
                             >
-                              <ShieldCheck className="w-3.5 h-3.5 text-[#C4F167]" />
+                              <ShieldCheck className="w-3.5 h-3.5 text-[#84CC16] dark:text-[#C4F167]" />
                               Admin Console
                             </Link>
                           )}
                         </div>
 
-                        <div className="pt-1 border-t border-[#222222]">
+                        <div className={`pt-1 border-t ${isDark ? 'border-[#222222]' : 'border-slate-100'}`}>
                           <button
                             type="button"
                             onClick={() => {
                               setShowUserMenu(false);
                               handleLogout();
                             }}
-                            className="w-full flex items-center gap-2.5 px-3 py-2 text-xs text-red-400 hover:bg-red-950/20 rounded-lg transition-colors cursor-pointer"
+                            className="w-full flex items-center gap-2.5 px-3 py-2 text-xs text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 rounded-lg transition-colors cursor-pointer"
                           >
                             <LogOut className="w-3.5 h-3.5" />
                             Sign Out
@@ -391,10 +441,12 @@ export const JobzyNavbar: React.FC = () => {
                   e.stopPropagation();
                   setMobileMenuOpen(!mobileMenuOpen);
                 }}
-                className="md:hidden p-2 text-[#A3A3A3] hover:text-white cursor-pointer relative z-20"
+                className={`md:hidden p-2 cursor-pointer relative z-20 ${
+                  isDark ? 'text-[#A3A3A3] hover:text-white' : 'text-[#475569] hover:text-[#0F172A]'
+                }`}
                 aria-label="Toggle Navigation"
               >
-                {mobileMenuOpen ? <X className="w-5 h-5 text-[#C4F167]" /> : <Menu className="w-5 h-5" />}
+                {mobileMenuOpen ? <X className="w-5 h-5 text-[#84CC16] dark:text-[#C4F167]" /> : <Menu className="w-5 h-5" />}
               </button>
             </div>
           }
@@ -402,7 +454,11 @@ export const JobzyNavbar: React.FC = () => {
 
         {/* Mobile dropdown menu */}
         {mobileMenuOpen && (
-          <div className="md:hidden mt-2 p-4 bg-[#111111]/95 border border-[#C4F167]/30 rounded-2xl shadow-2xl backdrop-blur-xl animate-in fade-in slide-in-from-top-2 duration-200 relative z-50">
+          <div className={`md:hidden mt-2 p-4 rounded-2xl shadow-2xl backdrop-blur-xl animate-in fade-in slide-in-from-top-2 duration-200 relative z-50 border ${
+            isDark
+              ? 'bg-[#111111]/95 border-[#C4F167]/30 text-white'
+              : 'bg-white/95 border-slate-200 text-slate-900 shadow-xl'
+          }`}>
             <div className="flex flex-col gap-2">
               {activeNavItems.map((item, idx) => (
                 <button
@@ -414,11 +470,13 @@ export const JobzyNavbar: React.FC = () => {
                   }}
                   className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors text-left cursor-pointer ${
                     idx === getActiveIndex()
-                      ? 'bg-[#C4F167]/15 text-[#C4F167] font-semibold'
-                      : 'text-[#A3A3A3] hover:text-white hover:bg-[#1a1a1a]'
+                      ? 'bg-[#C4F167]/20 text-[#3F6212] dark:text-[#C4F167] font-semibold'
+                      : isDark
+                      ? 'text-[#A3A3A3] hover:text-white hover:bg-[#1a1a1a]'
+                      : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
                   }`}
                 >
-                  <span className="text-[#C4F167]">{item.icon}</span>
+                  <span className="text-[#84CC16] dark:text-[#C4F167]">{item.icon}</span>
                   <span>{item.label}</span>
                 </button>
               ))}
