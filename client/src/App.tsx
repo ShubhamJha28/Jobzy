@@ -44,6 +44,7 @@ import { AdminDashboard } from './pages/admin/AdminDashboard';
 import { AdminUsersPage } from './pages/admin/AdminUsersPage';
 import { AdminAuditLogsPage } from './pages/admin/AdminAuditLogsPage';
 import { AdminSimulationBanner } from './components/AdminSimulationBanner';
+import Demo from './components/ui/demo';
 
 export function App() {
   return (
@@ -52,6 +53,9 @@ export function App() {
         <BrowserRouter>
           <AdminSimulationBanner />
           <Routes>
+            {/* Standalone Component Demo */}
+            <Route path="/demo" element={<Demo />} />
+
             {/* Public Website */}
             <Route path="/" element={<PublicLayout />}>
               <Route index element={<LandingPage />} />

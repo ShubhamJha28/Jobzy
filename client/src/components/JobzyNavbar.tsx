@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { JobzyLogo } from './JobzyLogo';
 import { JobzyButton } from './JobzyButton';
 import { useAuth } from '../context/AuthContext';
@@ -17,16 +17,58 @@ import {
   ShieldCheck,
   Check,
 } from 'lucide-react';
+import { LiquidNavbar, NimbusIcons, LiquidNavItem } from './ui/liquid-glass-navbar';
 
 export const JobzyNavbar: React.FC = () => {
   const { user, logout } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const [notifications, setNotifications] = useState<any[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [showNotifications, setShowNotifications] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
+
+  const publicNavItems: LiquidNavItem[] = [
+    { label: 'Features', icon: NimbusIcons.globe, fx: 'spin' },
+    { label: 'How It Works', icon: NimbusIcons.plane, fx: 'plane' },
+    { label: 'Pricing', icon: NimbusIcons.drop, fx: 'drop' },
+    { label: 'Explore Jobs', icon: NimbusIcons.home, fx: 'glow' },
+  ];
+
+  const getActiveIndex = () => {
+    if (location.pathname === '/pricing') return 2;
+    if (location.pathname.startsWith('/candidate/jobs')) return 3;
+    if (location.pathname === '/' && location.hash === '#how-it-works') return 1;
+    if (location.pathname === '/' && (location.hash === '#features' || location.hash === '')) return 0;
+    return 0;
+  };
+
+  const handleNavChange = (index: number) => {
+    const targets = [
+      { path: '/#features', id: 'features' },
+      { path: '/#how-it-works', id: 'how-it-works' },
+      { path: '/pricing' },
+      { path: '/candidate/jobs' },
+    ];
+    const target = targets[index];
+    if (!target) return;
+    if (target.id) {
+      if (location.pathname !== '/') {
+        navigate(target.path);
+      } else {
+        const el = document.getElementById(target.id);
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth' });
+        } else {
+          navigate(target.path);
+        }
+      }
+    } else {
+      navigate(target.path);
+    }
+  };
 
   useEffect(() => {
     if (user) {
@@ -63,26 +105,21 @@ export const JobzyNavbar: React.FC = () => {
 
   return (
     <header className="sticky top-0 z-40 w-full bg-[#000000]/90 backdrop-blur-md border-b border-[#1f1f1f]">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 min-h-16 py-1.5 flex items-center justify-between">
         {/* Logo */}
         <JobzyLogo size="md" withTagline={!user} />
 
-        {/* Public Nav links */}
+        {/* Public Nav links rendered with Liquid Glass Waterline */}
         {!user && (
-          <nav className="hidden md:flex items-center gap-8 text-sm font-medium text-[#A3A3A3]">
-            <Link to="/#features" className="hover:text-white transition-colors">
-              Platform Features
-            </Link>
-            <Link to="/#how-it-works" className="hover:text-white transition-colors">
-              How It Works
-            </Link>
-            <Link to="/pricing" className="hover:text-white transition-colors">
-              Pricing
-            </Link>
-            <Link to="/candidate/jobs" className="hover:text-white transition-colors">
-              Explore Jobs
-            </Link>
-          </nav>
+          <div className="hidden md:flex items-center">
+            <LiquidNavbar
+              items={publicNavItems}
+              tone={theme === 'dark' ? 'dark' : 'light'}
+              active={getActiveIndex()}
+              onChange={handleNavChange}
+              sound={false}
+            />
+          </div>
         )}
 
         {/* Right side controls */}
