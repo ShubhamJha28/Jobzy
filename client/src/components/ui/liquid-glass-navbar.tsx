@@ -3,11 +3,7 @@
 /**
  * Nimbus UI · Liquid Navbar — "Waterline"
  * Enhanced for Jobzy: Whole Navbar Liquid Effect with Lime Water Physics (#C4F167).
- * A pill of water. The active drop stretches toward the item you pick, splits into
- * droplets on long jumps and merges back with a ripple. The cursor lifts a meniscus,
- * every tap sends a wave along the pill, and each icon plays its own little scene.
- * Water is drawn by a tiny WebGL shader (only inside the pill, paused off-screen);
- * without WebGL it falls back to a CSS drop. No dependencies besides React.
+ * Fully functional click routing, audio synthesis, and smooth section scrolling.
  */
 
 import * as React from "react"
@@ -80,7 +76,6 @@ const NIMBUS_CSS = `
   isolation:isolate;
   font-family:ui-sans-serif,-apple-system,"SF Pro Text","Segoe UI",system-ui,sans-serif;
   -webkit-font-smoothing:antialiased;
-  user-select:none;
   -webkit-tap-highlight-color:transparent;
   width:100%;
 }
@@ -96,6 +91,7 @@ const NIMBUS_CSS = `
   border-radius:inherit;
   z-index:-2;
   overflow:hidden;
+  pointer-events:none !important;
   background:var(--n-tint);
   -webkit-backdrop-filter:blur(16px) saturate(1.3) brightness(1.05);
   backdrop-filter:blur(16px) saturate(1.3) brightness(1.05);
@@ -113,7 +109,7 @@ const NIMBUS_CSS = `
   left:${-PAD}px;
   top:${-PAD}px;
   z-index:-1;
-  pointer-events:none;
+  pointer-events:none !important;
 }
 .nimbus-nav[data-gl="off"] .nimbus-water{
   display:none;
@@ -126,7 +122,7 @@ const NIMBUS_CSS = `
   left:0;
   border-radius:999px;
   z-index:-1;
-  pointer-events:none;
+  pointer-events:none !important;
   will-change:transform,width;
   background:radial-gradient(120% 140% at 30% 0%,rgba(255,255,255,.85),rgba(196,241,103,.4) 60%),rgba(196,241,103,.45);
   box-shadow:inset 0 1px 1px rgba(255,255,255,.95),
@@ -138,19 +134,24 @@ const NIMBUS_CSS = `
   display:block;
 }
 .nimbus-slot-left,.nimbus-slot-right{
+  position:relative;
   display:flex;
   align-items:center;
-  z-index:1;
+  z-index:10;
+  pointer-events:auto;
 }
 .nimbus-items-container{
+  position:relative;
   display:flex;
   align-items:center;
   gap:2px;
-  z-index:1;
+  z-index:10;
+  pointer-events:auto;
 }
 .nimbus-item{
   position:relative;
-  z-index:1;
+  z-index:10;
+  pointer-events:auto;
   display:inline-flex;
   align-items:center;
   gap:8px;
@@ -727,17 +728,17 @@ export function LiquidNavbar({
     } catch {}
   }
 
-  const select = (i: number) => {
+  const select = (i: number, e?: React.MouseEvent) => {
+    e?.preventDefault()
+    e?.stopPropagation()
     const kind = items[i]?.fx ?? (items[i]?.icon ? "pop" : "none")
     setFx((f) => ({ i, n: f.n + 1 }))
     plip()
     const c = iconCenter(i)
     if (c && kind === "drop") setTimeout(() => ripple(c.x, st.current.t.cy, 1.4), 430)
     if (c && kind === "plane") ripple(c.x, c.y, 0.6)
-    if (i !== current) {
-      if (active === undefined) setInner(i)
-      onChange?.(i, items[i])
-    }
+    if (active === undefined) setInner(i)
+    onChange?.(i, items[i])
   }
 
   const onKeyDown = (e: React.KeyboardEvent) => {
@@ -771,7 +772,14 @@ export function LiquidNavbar({
       onKeyDown={onKeyDown}
       onPointerMove={onMove}
       onPointerLeave={() => { st.current.mouse.on = false; loop() }}
-      onPointerDown={(e) => { const p = local(e.clientX, e.clientY); ripple(p.x, p.y, 0.8) }}
+      onPointerDown={(e) => {
+        // Trigger soft ambient ripple on bare glass areas
+        const target = e.target as HTMLElement
+        if (!target.closest('button') && !target.closest('a')) {
+          const p = local(e.clientX, e.clientY)
+          ripple(p.x, p.y, 0.8)
+        }
+      }}
       style={style}
     >
       <style dangerouslySetInnerHTML={{ __html: NIMBUS_CSS }} />
@@ -800,7 +808,7 @@ export function LiquidNavbar({
             ref: (el: HTMLElement | null) => { itemRefs.current[i] = el },
             className: "nimbus-item",
             "aria-current": i === current ? ("page" as const) : undefined,
-            onClick: () => select(i),
+            onClick: (e: React.MouseEvent) => select(i, e),
           }
           const content = (
             <>
@@ -812,10 +820,10 @@ export function LiquidNavbar({
               <span className="nimbus-label">{it.label}</span>
             </>
           )
-          return it.href ? (
-            <a key={it.label + i} {...(props as any)} href={it.href} aria-label={it.label}>{content}</a>
-          ) : (
-            <button key={it.label + i} {...(props as any)} type="button" aria-label={it.label}>{content}</button>
+          return (
+            <button key={it.label + i} {...(props as any)} type="button" aria-label={it.label}>
+              {content}
+            </button>
           )
         })}
       </div>

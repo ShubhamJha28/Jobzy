@@ -30,31 +30,56 @@ export const JobzyNavbar: React.FC = () => {
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
+  // Close dropdowns on outside click
+  useEffect(() => {
+    const handleOutsideClick = () => {
+      setShowNotifications(false);
+      setShowUserMenu(false);
+    };
+    if (showNotifications || showUserMenu) {
+      window.addEventListener('click', handleOutsideClick);
+      return () => window.removeEventListener('click', handleOutsideClick);
+    }
+  }, [showNotifications, showUserMenu]);
+
+  // Handle smooth scroll when navigating to hash
+  useEffect(() => {
+    if (location.hash) {
+      const id = location.hash.replace('#', '');
+      const el = document.getElementById(id);
+      if (el) {
+        setTimeout(() => {
+          el.scrollIntoView({ behavior: 'smooth' });
+        }, 120);
+      }
+    }
+  }, [location.pathname, location.hash]);
+
   const publicNavItems: LiquidNavItem[] = [
-    { label: 'Features', icon: NimbusIcons.globe, fx: 'spin' },
-    { label: 'How It Works', icon: NimbusIcons.plane, fx: 'plane' },
-    { label: 'Pricing', icon: NimbusIcons.drop, fx: 'drop' },
-    { label: 'Explore Jobs', icon: NimbusIcons.home, fx: 'glow' },
+    { label: 'Features', href: '/#features', icon: NimbusIcons.globe, fx: 'spin' },
+    { label: 'How It Works', href: '/#how-it-works', icon: NimbusIcons.plane, fx: 'plane' },
+    { label: 'Pricing', href: '/pricing', icon: NimbusIcons.drop, fx: 'drop' },
+    { label: 'Explore Jobs', href: '/candidate/jobs', icon: NimbusIcons.home, fx: 'glow' },
   ];
 
   const candidateNavItems: LiquidNavItem[] = [
-    { label: 'Dashboard', icon: NimbusIcons.home, fx: 'glow' },
-    { label: 'Jobs', icon: NimbusIcons.globe, fx: 'spin' },
-    { label: 'Resumes', icon: NimbusIcons.plane, fx: 'plane' },
-    { label: 'Applications', icon: NimbusIcons.drop, fx: 'drop' },
+    { label: 'Dashboard', href: '/candidate/dashboard', icon: NimbusIcons.home, fx: 'glow' },
+    { label: 'Jobs', href: '/candidate/jobs', icon: NimbusIcons.globe, fx: 'spin' },
+    { label: 'Resumes', href: '/candidate/resumes', icon: NimbusIcons.plane, fx: 'plane' },
+    { label: 'Applications', href: '/candidate/applications', icon: NimbusIcons.drop, fx: 'drop' },
   ];
 
   const recruiterNavItems: LiquidNavItem[] = [
-    { label: 'Dashboard', icon: NimbusIcons.home, fx: 'glow' },
-    { label: 'Jobs', icon: NimbusIcons.globe, fx: 'spin' },
-    { label: 'Screening', icon: NimbusIcons.plane, fx: 'plane' },
-    { label: 'Interviews', icon: NimbusIcons.drop, fx: 'drop' },
+    { label: 'Dashboard', href: '/recruiter/dashboard', icon: NimbusIcons.home, fx: 'glow' },
+    { label: 'Jobs', href: '/recruiter/jobs', icon: NimbusIcons.globe, fx: 'spin' },
+    { label: 'Screening', href: '/recruiter/bulk-screening', icon: NimbusIcons.plane, fx: 'plane' },
+    { label: 'Interviews', href: '/recruiter/interviews', icon: NimbusIcons.drop, fx: 'drop' },
   ];
 
   const adminNavItems: LiquidNavItem[] = [
-    { label: 'Dashboard', icon: NimbusIcons.home, fx: 'glow' },
-    { label: 'Users', icon: NimbusIcons.user, fx: 'wave' },
-    { label: 'Audit Logs', icon: NimbusIcons.drop, fx: 'drop' },
+    { label: 'Dashboard', href: '/admin/dashboard', icon: NimbusIcons.home, fx: 'glow' },
+    { label: 'Users', href: '/admin/users', icon: NimbusIcons.user, fx: 'wave' },
+    { label: 'Audit Logs', href: '/admin/logs', icon: NimbusIcons.drop, fx: 'drop' },
   ];
 
   const activeNavItems = !user
@@ -70,7 +95,7 @@ export const JobzyNavbar: React.FC = () => {
       if (location.pathname === '/pricing') return 2;
       if (location.pathname.startsWith('/candidate/jobs')) return 3;
       if (location.pathname === '/' && location.hash === '#how-it-works') return 1;
-      if (location.pathname === '/' && (location.hash === '#features' || location.hash === '')) return 0;
+      if (location.pathname === '/' && location.hash === '#features') return 0;
       return 0;
     }
     if (user.role === 'CANDIDATE') {
@@ -81,7 +106,7 @@ export const JobzyNavbar: React.FC = () => {
     }
     if (user.role === 'RECRUITER') {
       if (location.pathname.includes('/jobs')) return 1;
-      if (location.pathname.includes('/screening') || location.pathname.includes('/ranking')) return 2;
+      if (location.pathname.includes('/screening') || location.pathname.includes('/ranking') || location.pathname.includes('/shortlists')) return 2;
       if (location.pathname.includes('/interviews')) return 3;
       return 0;
     }
@@ -98,11 +123,12 @@ export const JobzyNavbar: React.FC = () => {
       const targets = [
         { path: '/#features', id: 'features' },
         { path: '/#how-it-works', id: 'how-it-works' },
-        { path: '/pricing' },
-        { path: '/candidate/jobs' },
+        { path: '/pricing', id: '' },
+        { path: '/candidate/jobs', id: '' },
       ];
       const target = targets[index];
       if (!target) return;
+
       if (target.id) {
         if (location.pathname !== '/') {
           navigate(target.path);
@@ -110,6 +136,7 @@ export const JobzyNavbar: React.FC = () => {
           const el = document.getElementById(target.id);
           if (el) {
             el.scrollIntoView({ behavior: 'smooth' });
+            window.history.pushState(null, '', `#${target.id}`);
           } else {
             navigate(target.path);
           }
@@ -172,41 +199,54 @@ export const JobzyNavbar: React.FC = () => {
           onChange={handleNavChange}
           sound={false}
           leftContent={
-            <Link to="/" className="flex items-center gap-2 group transition-opacity hover:opacity-90 pl-1">
-              <JobzyLogo size="md" withTagline={!user} />
-            </Link>
+            <div className="flex items-center pl-1">
+              <JobzyLogo size="md" withTagline={!user} to="/" />
+            </div>
           }
           rightContent={
-            <div className="flex items-center gap-2 sm:gap-3 pr-1">
+            <div className="flex items-center gap-2 sm:gap-3 pr-1" onClick={(e) => e.stopPropagation()}>
               {/* Theme Toggle */}
               <button
-                onClick={toggleTheme}
-                className="p-2 rounded-xl text-[#A3A3A3] hover:text-[#C4F167] hover:bg-[#161616]/60 border border-transparent hover:border-[#C4F167]/30 transition-all cursor-pointer"
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  toggleTheme();
+                }}
+                className="p-2 rounded-xl text-[#A3A3A3] hover:text-[#C4F167] hover:bg-[#161616]/60 border border-transparent hover:border-[#C4F167]/30 transition-all cursor-pointer relative z-20"
                 title="Toggle Dark/Light Mode"
+                aria-label="Toggle Dark/Light Mode"
               >
                 {theme === 'dark' ? <Sun className="w-4 h-4 text-[#C4F167]" /> : <Moon className="w-4 h-4" />}
               </button>
 
               {!user ? (
-                <div className="flex items-center gap-2">
-                  <Link to="/login">
-                    <button className="px-3.5 py-1.5 text-xs font-semibold text-[#D1D1D1] hover:text-white transition-colors cursor-pointer rounded-lg hover:bg-white/5">
-                      Sign In
-                    </button>
+                <div className="flex items-center gap-2 relative z-20">
+                  <Link
+                    to="/login"
+                    className="px-3.5 py-1.5 text-xs font-semibold text-[#D1D1D1] hover:text-white transition-colors cursor-pointer rounded-lg hover:bg-white/5 inline-flex items-center justify-center"
+                  >
+                    Sign In
                   </Link>
-                  <Link to="/register">
-                    <button className="px-4 py-1.5 text-xs font-bold text-black bg-[#C4F167] hover:bg-[#b0df52] hover:shadow-[0_0_18px_rgba(196,241,103,0.45)] transition-all rounded-full cursor-pointer">
-                      Get Started
-                    </button>
+                  <Link
+                    to="/register"
+                    className="px-4 py-1.5 text-xs font-bold text-black bg-[#C4F167] hover:bg-[#b0df52] hover:shadow-[0_0_18px_rgba(196,241,103,0.45)] transition-all rounded-full cursor-pointer inline-flex items-center justify-center"
+                  >
+                    Get Started
                   </Link>
                 </div>
               ) : (
-                <div className="flex items-center gap-2 relative">
+                <div className="flex items-center gap-2 relative z-20">
                   {/* Notifications Bell */}
                   <div className="relative">
                     <button
-                      onClick={() => setShowNotifications(!showNotifications)}
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setShowNotifications(!showNotifications);
+                        setShowUserMenu(false);
+                      }}
                       className="p-2 rounded-xl text-[#A3A3A3] hover:text-white hover:bg-[#161616] border border-transparent hover:border-[#2a2a2a] transition-all cursor-pointer relative"
+                      aria-label="Notifications"
                     >
                       <Bell className="w-4 h-4" />
                       {unreadCount > 0 && (
@@ -215,13 +255,17 @@ export const JobzyNavbar: React.FC = () => {
                     </button>
 
                     {showNotifications && (
-                      <div className="absolute right-0 mt-2 w-80 bg-[#111111] border border-[#2a2a2a] rounded-2xl shadow-2xl p-4 z-50">
+                      <div
+                        onClick={(e) => e.stopPropagation()}
+                        className="absolute right-0 mt-2 w-80 bg-[#111111] border border-[#2a2a2a] rounded-2xl shadow-2xl p-4 z-50 animate-in fade-in duration-150"
+                      >
                         <div className="flex items-center justify-between pb-3 border-b border-[#222222]">
                           <span className="text-xs font-bold text-white uppercase tracking-wider">
                             Notifications ({unreadCount})
                           </span>
                           {unreadCount > 0 && (
                             <button
+                              type="button"
                               onClick={markAllRead}
                               className="text-[11px] text-[#C4F167] hover:underline cursor-pointer"
                             >
@@ -255,8 +299,14 @@ export const JobzyNavbar: React.FC = () => {
                   {/* User Dropdown */}
                   <div className="relative">
                     <button
-                      onClick={() => setShowUserMenu(!showUserMenu)}
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setShowUserMenu(!showUserMenu);
+                        setShowNotifications(false);
+                      }}
                       className="flex items-center gap-2 p-1.5 rounded-xl bg-[#141414] border border-[#242424] hover:border-[#383838] transition-colors cursor-pointer"
+                      aria-label="User Menu"
                     >
                       <img
                         src={user.avatar || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(user.name)}`}
@@ -270,7 +320,10 @@ export const JobzyNavbar: React.FC = () => {
                     </button>
 
                     {showUserMenu && (
-                      <div className="absolute right-0 mt-2 w-56 bg-[#111111] border border-[#2a2a2a] rounded-2xl shadow-2xl p-2 z-50">
+                      <div
+                        onClick={(e) => e.stopPropagation()}
+                        className="absolute right-0 mt-2 w-56 bg-[#111111] border border-[#2a2a2a] rounded-2xl shadow-2xl p-2 z-50 animate-in fade-in duration-150"
+                      >
                         <div className="px-3 py-2 border-b border-[#222222]">
                           <p className="text-xs font-bold text-white truncate">{user.name}</p>
                           <p className="text-[11px] text-[#A3A3A3] truncate">{user.email}</p>
@@ -314,7 +367,11 @@ export const JobzyNavbar: React.FC = () => {
 
                         <div className="pt-1 border-t border-[#222222]">
                           <button
-                            onClick={handleLogout}
+                            type="button"
+                            onClick={() => {
+                              setShowUserMenu(false);
+                              handleLogout();
+                            }}
                             className="w-full flex items-center gap-2.5 px-3 py-2 text-xs text-red-400 hover:bg-red-950/20 rounded-lg transition-colors cursor-pointer"
                           >
                             <LogOut className="w-3.5 h-3.5" />
@@ -329,8 +386,12 @@ export const JobzyNavbar: React.FC = () => {
 
               {/* Mobile menu toggle button */}
               <button
-                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                className="md:hidden p-2 text-[#A3A3A3] hover:text-white cursor-pointer"
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setMobileMenuOpen(!mobileMenuOpen);
+                }}
+                className="md:hidden p-2 text-[#A3A3A3] hover:text-white cursor-pointer relative z-20"
                 aria-label="Toggle Navigation"
               >
                 {mobileMenuOpen ? <X className="w-5 h-5 text-[#C4F167]" /> : <Menu className="w-5 h-5" />}
@@ -341,16 +402,17 @@ export const JobzyNavbar: React.FC = () => {
 
         {/* Mobile dropdown menu */}
         {mobileMenuOpen && (
-          <div className="md:hidden mt-2 p-4 bg-[#111111]/95 border border-[#C4F167]/30 rounded-2xl shadow-2xl backdrop-blur-xl animate-in fade-in slide-in-from-top-2 duration-200">
+          <div className="md:hidden mt-2 p-4 bg-[#111111]/95 border border-[#C4F167]/30 rounded-2xl shadow-2xl backdrop-blur-xl animate-in fade-in slide-in-from-top-2 duration-200 relative z-50">
             <div className="flex flex-col gap-2">
               {activeNavItems.map((item, idx) => (
                 <button
                   key={item.label}
+                  type="button"
                   onClick={() => {
                     handleNavChange(idx);
                     setMobileMenuOpen(false);
                   }}
-                  className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors text-left ${
+                  className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors text-left cursor-pointer ${
                     idx === getActiveIndex()
                       ? 'bg-[#C4F167]/15 text-[#C4F167] font-semibold'
                       : 'text-[#A3A3A3] hover:text-white hover:bg-[#1a1a1a]'
