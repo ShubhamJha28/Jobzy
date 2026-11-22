@@ -43,12 +43,14 @@ import { CompanyProfilePage } from './pages/recruiter/CompanyProfilePage';
 import { AdminDashboard } from './pages/admin/AdminDashboard';
 import { AdminUsersPage } from './pages/admin/AdminUsersPage';
 import { AdminAuditLogsPage } from './pages/admin/AdminAuditLogsPage';
+import { AdminSimulationBanner } from './components/AdminSimulationBanner';
 
 export function App() {
   return (
     <ThemeProvider>
       <AuthProvider>
         <BrowserRouter>
+          <AdminSimulationBanner />
           <Routes>
             {/* Public Website */}
             <Route path="/" element={<PublicLayout />}>

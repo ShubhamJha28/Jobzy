@@ -1,15 +1,30 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
 import { apiRequest } from '../../api/client';
 import { JobzyCard } from '../../components/JobzyCard';
 import { JobzyButton } from '../../components/JobzyButton';
 import { LoadingIndicator } from '../../components/LoadingIndicator';
-import { Users, Search, ShieldCheck } from 'lucide-react';
+import { Users, Search, ShieldCheck, Eye } from 'lucide-react';
 
 export const AdminUsersPage: React.FC = () => {
+  const { impersonate } = useAuth();
+  const navigate = useNavigate();
   const [users, setUsers] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [roleFilter, setRoleFilter] = useState('ALL');
+
+  const handleSimulateUser = async (userObj: any) => {
+    try {
+      const target = await impersonate({ userId: userObj.id });
+      if (target.role === 'CANDIDATE') navigate('/candidate/dashboard');
+      else if (target.role === 'RECRUITER') navigate('/recruiter/dashboard');
+      else navigate('/admin/dashboard');
+    } catch (err: any) {
+      alert(err.message || 'Failed to simulate user.');
+    }
+  };
 
   useEffect(() => {
     loadUsers();
@@ -96,7 +111,7 @@ export const AdminUsersPage: React.FC = () => {
                   <th className="py-3 px-4">Email</th>
                   <th className="py-3 px-4">Current Role</th>
                   <th className="py-3 px-4">Joined Date</th>
-                  <th className="py-3 px-4 text-right">Modify Role</th>
+                  <th className="py-3 px-4 text-right">Actions & Role</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#1e1e1e]">
@@ -128,15 +143,26 @@ export const AdminUsersPage: React.FC = () => {
                       {new Date(u.createdAt).toLocaleDateString()}
                     </td>
                     <td className="py-3.5 px-4 text-right">
-                      <select
-                        value={u.role}
-                        onChange={(e) => handleUpdateRole(u.id, e.target.value)}
-                        className="bg-[#181818] border border-[#2e2e2e] rounded-lg px-2 py-1 text-xs text-white"
-                      >
-                        <option value="CANDIDATE">Candidate</option>
-                        <option value="RECRUITER">Recruiter</option>
-                        <option value="ADMIN">Admin</option>
-                      </select>
+                      <div className="flex items-center justify-end gap-2">
+                        <button
+                          type="button"
+                          onClick={() => handleSimulateUser(u)}
+                          className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#222222] hover:bg-[#C4F167] hover:text-black text-[11px] font-semibold text-white transition-all cursor-pointer"
+                          title={`Simulate ${u.name}'s account`}
+                        >
+                          <Eye className="w-3 h-3" />
+                          <span>View As</span>
+                        </button>
+                        <select
+                          value={u.role}
+                          onChange={(e) => handleUpdateRole(u.id, e.target.value)}
+                          className="bg-[#181818] border border-[#2e2e2e] rounded-lg px-2 py-1 text-xs text-white"
+                        >
+                          <option value="CANDIDATE">Candidate</option>
+                          <option value="RECRUITER">Recruiter</option>
+                          <option value="ADMIN">Admin</option>
+                        </select>
+                      </div>
                     </td>
                   </tr>
                 ))}

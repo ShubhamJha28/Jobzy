@@ -43,12 +43,19 @@ export const PublicLayout: React.FC = () => {
           </div>
 
           <div>
-            <h4 className="text-xs font-bold uppercase tracking-wider text-white mb-3">Quick Demo Access</h4>
-            <p className="text-xs text-[#A3A3A3] mb-2">Experience the platform immediately:</p>
-            <div className="space-y-1.5 text-xs text-[#888888]">
-              <p>Candidate: <span className="text-[#C4F167]">candidate@jobzy.ai</span></p>
-              <p>Recruiter: <span className="text-[#C4F167]">recruiter@jobzy.ai</span></p>
-              <p>Password: <span className="text-white">password123</span></p>
+            <h4 className="text-xs font-bold uppercase tracking-wider text-white mb-3">Enterprise Access</h4>
+            <p className="text-xs text-[#A3A3A3] mb-2">Next-generation hiring intelligence:</p>
+            <div className="space-y-2 text-xs text-[#888888]">
+              <p><span className="text-[#C4F167] font-semibold">Candidates:</span> ATS audits & resume optimization</p>
+              <p><span className="text-[#C4F167] font-semibold">Recruiters:</span> Batch screening & explainable ranking</p>
+              <div className="pt-1.5 flex flex-col gap-1">
+                <Link to="/register" className="text-white hover:text-[#C4F167] transition-colors font-semibold">
+                  Create Free Account →
+                </Link>
+                <Link to="/login" className="text-[#A3A3A3] hover:text-white transition-colors">
+                  Sign In to Dashboard
+                </Link>
+              </div>
             </div>
           </div>
         </div>

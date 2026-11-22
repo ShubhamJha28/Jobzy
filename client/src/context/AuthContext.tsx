@@ -15,10 +15,13 @@ interface AuthContextType {
   user: User | null;
   token: string | null;
   isLoading: boolean;
+  isImpersonating: boolean;
   login: (email: string, password: string) => Promise<User>;
   register: (payload: any) => Promise<User>;
   logout: () => void;
   refreshUser: () => Promise<void>;
+  impersonate: (target: { email?: string; userId?: string }) => Promise<User>;
+  exitImpersonation: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -30,6 +33,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   });
   const [token, setToken] = useState<string | null>(() => localStorage.getItem('jobzy_token'));
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isImpersonating, setIsImpersonating] = useState<boolean>(() => !!localStorage.getItem('jobzy_admin_backup'));
 
   const refreshUser = async () => {
     if (!localStorage.getItem('jobzy_token')) {
@@ -85,12 +89,69 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const logout = () => {
     localStorage.removeItem('jobzy_token');
     localStorage.removeItem('jobzy_user');
+    localStorage.removeItem('jobzy_admin_backup');
     setToken(null);
     setUser(null);
+    setIsImpersonating(false);
+  };
+
+  const impersonate = async (target: { email?: string; userId?: string }): Promise<User> => {
+    if (!localStorage.getItem('jobzy_admin_backup')) {
+      const currentToken = localStorage.getItem('jobzy_token');
+      const currentUser = localStorage.getItem('jobzy_user');
+      if (currentToken && currentUser) {
+        localStorage.setItem(
+          'jobzy_admin_backup',
+          JSON.stringify({ token: currentToken, user: JSON.parse(currentUser) })
+        );
+      }
+    }
+
+    const res = await apiRequest<{ success: boolean; token: string; user: User }>('/admin/impersonate', {
+      method: 'POST',
+      body: JSON.stringify(target),
+    });
+
+    localStorage.setItem('jobzy_token', res.token);
+    localStorage.setItem('jobzy_user', JSON.stringify(res.user));
+    setToken(res.token);
+    setUser(res.user);
+    setIsImpersonating(true);
+    return res.user;
+  };
+
+  const exitImpersonation = () => {
+    const backupRaw = localStorage.getItem('jobzy_admin_backup');
+    if (backupRaw) {
+      try {
+        const backup = JSON.parse(backupRaw);
+        localStorage.setItem('jobzy_token', backup.token);
+        localStorage.setItem('jobzy_user', JSON.stringify(backup.user));
+        setToken(backup.token);
+        setUser(backup.user);
+      } catch (e) {
+        console.error('Failed to restore admin session:', e);
+      }
+    }
+    localStorage.removeItem('jobzy_admin_backup');
+    setIsImpersonating(false);
   };
 
   return (
-    <AuthContext.Provider value={{ user, token, isLoading, login, register, logout, refreshUser }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        token,
+        isLoading,
+        isImpersonating,
+        login,
+        register,
+        logout,
+        refreshUser,
+        impersonate,
+        exitImpersonation,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );

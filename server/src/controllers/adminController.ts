@@ -1,6 +1,7 @@
 import { Response } from 'express';
-import { AuthenticatedRequest } from '../middleware/auth';
+import { AuthenticatedRequest, signToken } from '../middleware/auth';
 import prisma from '../config/prisma';
+import { logAudit } from '../utils/logger';
 
 export class AdminController {
   public static async getSystemStats(req: AuthenticatedRequest, res: Response): Promise<void> {
@@ -106,6 +107,64 @@ export class AdminController {
       res.status(200).json({ success: true, logs });
     } catch (error: any) {
       res.status(500).json({ success: false, message: 'Failed to retrieve audit logs.' });
+    }
+  }
+
+  public static async impersonateUser(req: AuthenticatedRequest, res: Response): Promise<void> {
+    try {
+      const { email, userId } = req.body;
+      if (!email && !userId) {
+        res.status(400).json({ success: false, message: 'Target email or userId is required.' });
+        return;
+      }
+
+      const where: any = email ? { email: String(email) } : { id: String(userId) };
+      const targetUser = await prisma.user.findUnique({
+        where,
+        include: {
+          candidateProfile: true,
+          recruiterProfile: {
+            include: { company: true },
+          },
+        },
+      });
+
+      if (!targetUser) {
+        res.status(404).json({ success: false, message: 'Target user not found.' });
+        return;
+      }
+
+      const token = signToken({
+        id: targetUser.id,
+        email: targetUser.email,
+        role: targetUser.role,
+        name: targetUser.name,
+      });
+
+      await logAudit({
+        userId: req.user!.id,
+        action: 'ADMIN_DEMO_MASQUERADE',
+        resource: 'AUTH',
+        details: { targetEmail: targetUser.email, targetRole: targetUser.role },
+      });
+
+      res.status(200).json({
+        success: true,
+        message: `Admin demo simulation active for ${targetUser.name} (${targetUser.role}).`,
+        token,
+        user: {
+          id: targetUser.id,
+          name: targetUser.name,
+          email: targetUser.email,
+          role: targetUser.role,
+          avatar: targetUser.avatar,
+          candidateProfile: targetUser.candidateProfile,
+          recruiterProfile: targetUser.recruiterProfile,
+        },
+      });
+    } catch (error: any) {
+      console.error('impersonateUser error:', error);
+      res.status(500).json({ success: false, message: 'Failed to initiate admin simulation.' });
     }
   }
 }

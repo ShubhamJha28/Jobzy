@@ -3,7 +3,7 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { JobzyButton } from '../../components/JobzyButton';
 import { JobzyLogo } from '../../components/JobzyLogo';
-import { AlertCircle, Lock, Mail, Sparkles, Check } from 'lucide-react';
+import { AlertCircle, Lock, Mail, Sparkles, ShieldCheck } from 'lucide-react';
 
 export const LoginPage: React.FC = () => {
   const { login } = useAuth();
@@ -14,6 +14,9 @@ export const LoginPage: React.FC = () => {
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [showAdminDemo, setShowAdminDemo] = useState(false);
+
+  const isDemoVisible = searchParams.get('admin') === 'true' || searchParams.get('demo') === 'admin' || showAdminDemo;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -63,38 +66,43 @@ export const LoginPage: React.FC = () => {
           </p>
         </div>
 
-        {/* Demo Fast Login Buttons */}
-        <div className="space-y-2 bg-[#161616] p-3.5 rounded-2xl border border-[#2a2a2a]">
-          <div className="flex items-center gap-1.5 text-xs font-bold text-[#C4F167]">
-            <Sparkles className="w-3.5 h-3.5" />
-            <span>Instant Demo Access (1-Click)</span>
-          </div>
-          <div className="grid grid-cols-2 gap-2 pt-1">
+        {/* Demo Fast Login Buttons - Only visible to Admin or via ?admin=true */}
+        {isDemoVisible && (
+          <div className="space-y-2 bg-[#161616] p-3.5 rounded-2xl border border-[#C4F167]/30 transition-all">
+            <div className="flex items-center justify-between text-xs font-bold text-[#C4F167]">
+              <div className="flex items-center gap-1.5">
+                <ShieldCheck className="w-3.5 h-3.5" />
+                <span>Admin Demo Mode (1-Click)</span>
+              </div>
+              <span className="text-[10px] bg-[#C4F167]/20 px-2 py-0.5 rounded font-mono">STAFF ONLY</span>
+            </div>
+            <div className="grid grid-cols-2 gap-2 pt-1">
+              <button
+                type="button"
+                onClick={() => handleDemoLogin('candidate@jobzy.ai')}
+                className="text-left p-2.5 rounded-xl bg-[#1f1f1f] hover:bg-[#282828] border border-[#2e2e2e] transition-colors cursor-pointer"
+              >
+                <span className="text-xs font-bold text-white block">Alex Rivera</span>
+                <span className="text-[10px] text-[#A3A3A3] block">Candidate Portal</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => handleDemoLogin('recruiter@jobzy.ai')}
+                className="text-left p-2.5 rounded-xl bg-[#1f1f1f] hover:bg-[#282828] border border-[#2e2e2e] transition-colors cursor-pointer"
+              >
+                <span className="text-xs font-bold text-white block">Sarah Chen</span>
+                <span className="text-[10px] text-[#C4F167] block">Recruiter Portal</span>
+              </button>
+            </div>
             <button
               type="button"
-              onClick={() => handleDemoLogin('candidate@jobzy.ai')}
-              className="text-left p-2.5 rounded-xl bg-[#1f1f1f] hover:bg-[#282828] border border-[#2e2e2e] transition-colors cursor-pointer"
+              onClick={() => handleDemoLogin('admin@jobzy.ai')}
+              className="w-full text-center py-1.5 rounded-lg text-[11px] font-medium text-[#888888] hover:text-[#C4F167] transition-colors cursor-pointer"
             >
-              <span className="text-xs font-bold text-white block">Alex Rivera</span>
-              <span className="text-[10px] text-[#A3A3A3] block">Candidate Portal</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => handleDemoLogin('recruiter@jobzy.ai')}
-              className="text-left p-2.5 rounded-xl bg-[#1f1f1f] hover:bg-[#282828] border border-[#2e2e2e] transition-colors cursor-pointer"
-            >
-              <span className="text-xs font-bold text-white block">Sarah Chen</span>
-              <span className="text-[10px] text-[#C4F167] block">Recruiter Portal</span>
+              Sign in as Elena Vance (Platform Admin) →
             </button>
           </div>
-          <button
-            type="button"
-            onClick={() => handleDemoLogin('admin@jobzy.ai')}
-            className="w-full text-center py-1.5 rounded-lg text-[11px] font-medium text-[#888888] hover:text-white transition-colors cursor-pointer"
-          >
-            Or log in as Platform Administrator →
-          </button>
-        </div>
+        )}
 
         {error && (
           <div className="flex items-center gap-2 p-3 text-xs text-red-400 bg-red-950/20 border border-red-900/40 rounded-xl">
@@ -160,6 +168,17 @@ export const LoginPage: React.FC = () => {
             Register now
           </Link>
         </p>
+
+        <div className="pt-3 border-t border-[#1e1e1e] text-center">
+          <button
+            type="button"
+            onClick={() => setShowAdminDemo(!showAdminDemo)}
+            className="text-[11px] text-[#555555] hover:text-[#A3A3A3] transition-colors inline-flex items-center gap-1 cursor-pointer"
+          >
+            <ShieldCheck className="w-3.5 h-3.5" />
+            <span>{isDemoVisible ? 'Hide Admin Demo Mode' : 'Admin Demo Access'}</span>
+          </button>
+        </div>
       </div>
     </div>
   );

@@ -67,7 +67,7 @@ export const LandingPage: React.FC = () => {
                 <span className="text-xs font-mono text-[#666666] ml-2">jobzy-talent-intelligence-v2.6.sh</span>
               </div>
               <span className="text-xs font-semibold text-[#C4F167] bg-[#C4F167]/10 px-2.5 py-0.5 rounded-full border border-[#C4F167]/20">
-                LIVE DEMO PREVIEW
+                LIVE PLATFORM PREVIEW
               </span>
             </div>
 
@@ -269,7 +269,7 @@ export const LandingPage: React.FC = () => {
               </Link>
               <Link to="/login">
                 <JobzyButton size="lg" variant="secondary">
-                  Sign In with Demo
+                  Sign In to Account
                 </JobzyButton>
               </Link>
             </div>

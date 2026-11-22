@@ -82,5 +82,6 @@ router.get('/admin/stats', authenticateToken, requireRole(['ADMIN']), AdminContr
 router.get('/admin/users', authenticateToken, requireRole(['ADMIN']), AdminController.getUsers);
 router.patch('/admin/users/:id/role', authenticateToken, requireRole(['ADMIN']), AdminController.updateUserRole);
 router.get('/admin/logs', authenticateToken, requireRole(['ADMIN']), AdminController.getAuditLogs);
+router.post('/admin/impersonate', authenticateToken, requireRole(['ADMIN']), AdminController.impersonateUser);
 
 export default router;
