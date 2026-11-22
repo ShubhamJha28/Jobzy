@@ -52,9 +52,13 @@ export const LandingPage: React.FC = () => {
             />
           </Link>
           <Link to="/candidate/jobs">
-            <JobzyButton size="lg" variant="secondary" className="h-12">
-              Explore JOBZY Platform
-            </JobzyButton>
+            <AntiMetalButton
+              label="Explore JOBZY Platform"
+              className="h-12 w-64 text-sm font-semibold border border-[#2a2a2a]"
+              accentFrom="#262626"
+              accentTo="#161616"
+              dotColor="#C4F167"
+            />
           </Link>
         </div>
 
