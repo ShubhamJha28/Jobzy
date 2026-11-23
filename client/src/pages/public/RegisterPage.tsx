@@ -1,15 +1,24 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { GradFlow } from 'gradflow';
 import { useAuth } from '../../context/AuthContext';
+import { useTheme } from '../../context/ThemeContext';
 import { JobzyButton } from '../../components/JobzyButton';
 import { JobzyLogo } from '../../components/JobzyLogo';
 import { AlertCircle, User, Mail, Lock, Building, Briefcase } from 'lucide-react';
 
 export const RegisterPage: React.FC = () => {
   const { register } = useAuth();
+  const { theme } = useTheme();
+  const isDark = theme === 'dark';
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
 
-  const [role, setRole] = useState<'CANDIDATE' | 'RECRUITER'>('CANDIDATE');
+  const [role, setRole] = useState<'CANDIDATE' | 'RECRUITER'>(() => {
+    const r = searchParams.get('role')?.toUpperCase();
+    if (r === 'RECRUITER') return 'RECRUITER';
+    return 'CANDIDATE';
+  });
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -43,8 +52,37 @@ export const RegisterPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-[85vh] flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-[#000000]">
-      <div className="max-w-md w-full space-y-6 bg-[#111111] border border-[#242424] p-8 sm:p-10 rounded-3xl shadow-2xl">
+    <div className="relative min-h-[85vh] flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+      {/* Background Animated GradFlow */}
+      <div className="fixed inset-0 w-full h-full pointer-events-none z-[-1] overflow-hidden">
+        <GradFlow
+          className="w-full h-full"
+          config={
+            isDark
+              ? {
+                  type: 'fold',
+                  color1: '#000000',
+                  color2: '#000000',
+                  color3: '#e0fe9e',
+                  speed: 0.5,
+                  scale: 1,
+                  noise: 0.12,
+                }
+              : {
+                  type: 'fold',
+                  color1: '#f8fafc',
+                  color2: '#f1f5f9',
+                  color3: '#84cc16',
+                  speed: 0.5,
+                  scale: 1,
+                  noise: 0.12,
+                }
+          }
+          interactive
+        />
+      </div>
+
+      <div className="relative z-10 max-w-md w-full space-y-6 bg-[#111111]/90 backdrop-blur-xl border border-[#242424] p-8 sm:p-10 rounded-3xl shadow-2xl">
         <div className="text-center">
           <JobzyLogo size="lg" to="/" />
           <h2 className="mt-6 text-2xl font-black text-white tracking-tight">
@@ -60,24 +98,26 @@ export const RegisterPage: React.FC = () => {
           <button
             type="button"
             onClick={() => setRole('CANDIDATE')}
-            className={`py-2 text-xs font-bold rounded-xl transition-all cursor-pointer ${
+            className={`flex items-center justify-center gap-2 py-2.5 text-xs font-bold rounded-xl transition-all cursor-pointer ${
               role === 'CANDIDATE'
                 ? 'bg-[#C4F167] text-[#000000] shadow-sm'
                 : 'text-[#A3A3A3] hover:text-white'
             }`}
           >
-            I'm a Candidate
+            <User className="w-3.5 h-3.5" />
+            <span>I'm a Candidate</span>
           </button>
           <button
             type="button"
             onClick={() => setRole('RECRUITER')}
-            className={`py-2 text-xs font-bold rounded-xl transition-all cursor-pointer ${
+            className={`flex items-center justify-center gap-2 py-2.5 text-xs font-bold rounded-xl transition-all cursor-pointer ${
               role === 'RECRUITER'
                 ? 'bg-[#C4F167] text-[#000000] shadow-sm'
                 : 'text-[#A3A3A3] hover:text-white'
             }`}
           >
-            I'm a Recruiter
+            <Briefcase className="w-3.5 h-3.5" />
+            <span>I'm a Recruiter</span>
           </button>
         </div>
 
