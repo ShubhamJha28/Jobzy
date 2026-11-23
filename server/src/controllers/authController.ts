@@ -96,7 +96,7 @@ export class AuthController {
 
   public static async login(req: Request, res: Response): Promise<void> {
     try {
-      const { email, password } = req.body;
+      const { email, password, role } = req.body;
 
       if (!email || !password) {
         res.status(400).json({ success: false, message: 'Email and password are required.' });
@@ -124,12 +124,26 @@ export class AuthController {
         return;
       }
 
+      // Role differentiation check
+      if (role && user.role !== 'ADMIN') {
+        const expectedRole = (role as string).toUpperCase();
+        if (user.role !== expectedRole) {
+          const actualRoleLabel = user.role === 'RECRUITER' ? 'Recruiter' : 'Candidate';
+          res.status(403).json({
+            success: false,
+            message: `This account is registered as a ${actualRoleLabel}. Please switch to ${actualRoleLabel} Login.`,
+          });
+          return;
+        }
+      }
+
       const token = signToken({ id: user.id, email: user.email, role: user.role, name: user.name });
 
       await logAudit({
         userId: user.id,
         action: 'USER_LOGIN',
         resource: 'AUTH',
+        details: { loginRole: role || user.role, userRole: user.role },
       });
 
       res.status(200).json({

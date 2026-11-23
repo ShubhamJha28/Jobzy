@@ -16,7 +16,7 @@ interface AuthContextType {
   token: string | null;
   isLoading: boolean;
   isImpersonating: boolean;
-  login: (email: string, password: string) => Promise<User>;
+  login: (email: string, password: string, role?: 'CANDIDATE' | 'RECRUITER') => Promise<User>;
   register: (payload: any) => Promise<User>;
   logout: () => void;
   refreshUser: () => Promise<void>;
@@ -60,10 +60,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     refreshUser();
   }, []);
 
-  const login = async (email: string, password: string): Promise<User> => {
+  const login = async (email: string, password: string, role?: 'CANDIDATE' | 'RECRUITER'): Promise<User> => {
     const res = await apiRequest<{ success: boolean; token: string; user: User }>('/auth/login', {
       method: 'POST',
-      body: JSON.stringify({ email, password }),
+      body: JSON.stringify({ email, password, role }),
     });
 
     localStorage.setItem('jobzy_token', res.token);

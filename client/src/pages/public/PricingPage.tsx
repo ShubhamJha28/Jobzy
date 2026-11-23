@@ -1,12 +1,47 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { GradFlow } from 'gradflow';
+import { useTheme } from '../../context/ThemeContext';
 import { JobzyCard } from '../../components/JobzyCard';
 import { JobzyButton } from '../../components/JobzyButton';
 import { Check, Sparkles } from 'lucide-react';
 
 export const PricingPage: React.FC = () => {
+  const { theme } = useTheme();
+  const isDark = theme === 'dark';
+
   return (
-    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-16 space-y-16">
+    <div className="relative min-h-[85vh] py-16 px-4 sm:px-6 lg:px-8">
+      {/* Background Animated GradFlow */}
+      <div className="fixed inset-0 w-full h-full pointer-events-none z-[-1] overflow-hidden">
+        <GradFlow
+          className="w-full h-full"
+          config={
+            isDark
+              ? {
+                  type: 'fold',
+                  color1: '#000000',
+                  color2: '#000000',
+                  color3: '#e0fe9e',
+                  speed: 0.5,
+                  scale: 1,
+                  noise: 0.12,
+                }
+              : {
+                  type: 'fold',
+                  color1: '#f8fafc',
+                  color2: '#f1f5f9',
+                  color3: '#84cc16',
+                  speed: 0.5,
+                  scale: 1,
+                  noise: 0.12,
+                }
+          }
+          interactive
+        />
+      </div>
+
+      <div className="max-w-6xl mx-auto space-y-16 relative z-10">
       <div className="text-center max-w-3xl mx-auto space-y-4">
         <span className="text-xs font-bold text-[#C4F167] uppercase tracking-widest">
           Transparent Investment
@@ -109,5 +144,6 @@ export const PricingPage: React.FC = () => {
         </JobzyCard>
       </div>
     </div>
+  </div>
   );
 };

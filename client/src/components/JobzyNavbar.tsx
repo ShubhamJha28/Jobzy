@@ -42,24 +42,46 @@ export const JobzyNavbar: React.FC = () => {
     }
   }, [showNotifications, showUserMenu]);
 
+  // Scroll with comfortable offset for sticky navbar
+  const scrollToSection = (id: string) => {
+    let el = document.getElementById(id);
+    if (!el && (id === 'explore-jobs' || id === 'jobs')) {
+      el = document.getElementById('explore-jobs') || document.getElementById('jobs');
+    }
+    if (!el) return;
+    const navbarOffset = 96;
+    const rect = el.getBoundingClientRect();
+    const targetY = window.scrollY + rect.top - navbarOffset;
+    window.scrollTo({
+      top: Math.max(0, targetY),
+      behavior: 'smooth',
+    });
+  };
+
   // Handle smooth scroll when navigating to hash
   useEffect(() => {
     if (location.hash) {
       const id = location.hash.replace('#', '');
-      const el = document.getElementById(id);
-      if (el) {
-        setTimeout(() => {
-          el.scrollIntoView({ behavior: 'smooth' });
-        }, 120);
-      }
+      const tryScroll = (attempts = 0) => {
+        let el = document.getElementById(id);
+        if (!el && (id === 'explore-jobs' || id === 'jobs')) {
+          el = document.getElementById('explore-jobs') || document.getElementById('jobs');
+        }
+        if (el) {
+          scrollToSection(id);
+        } else if (attempts < 8) {
+          setTimeout(() => tryScroll(attempts + 1), 80);
+        }
+      };
+      tryScroll();
     }
   }, [location.pathname, location.hash]);
 
   const publicNavItems: LiquidNavItem[] = [
     { label: 'Features', href: '/#features', icon: NimbusIcons.globe, fx: 'spin' },
     { label: 'How It Works', href: '/#how-it-works', icon: NimbusIcons.plane, fx: 'plane' },
-    { label: 'Pricing', href: '/pricing', icon: NimbusIcons.drop, fx: 'drop' },
-    { label: 'Explore Jobs', href: '/candidate/jobs', icon: NimbusIcons.home, fx: 'glow' },
+    { label: 'Pricing', href: '/#pricing', icon: NimbusIcons.drop, fx: 'drop' },
+    { label: 'Explore Jobs', href: '/#explore-jobs', icon: NimbusIcons.home, fx: 'glow' },
   ];
 
   const candidateNavItems: LiquidNavItem[] = [
@@ -93,9 +115,14 @@ export const JobzyNavbar: React.FC = () => {
   const getActiveIndex = () => {
     if (!user) {
       if (location.pathname === '/pricing') return 2;
+      if (location.pathname === '/') {
+        if (location.hash === '#explore-jobs' || location.hash === '#jobs') return 3;
+        if (location.hash === '#pricing') return 2;
+        if (location.hash === '#how-it-works') return 1;
+        if (location.hash === '#features') return 0;
+        return 0;
+      }
       if (location.pathname.startsWith('/candidate/jobs')) return 3;
-      if (location.pathname === '/' && location.hash === '#how-it-works') return 1;
-      if (location.pathname === '/' && location.hash === '#features') return 0;
       return 0;
     }
     if (user.role === 'CANDIDATE') {
@@ -118,13 +145,49 @@ export const JobzyNavbar: React.FC = () => {
     return 0;
   };
 
+  const [activeIdx, setActiveIdx] = useState<number>(() => getActiveIndex());
+
+  // Keep activeIdx in sync with route / hash changes
+  useEffect(() => {
+    setActiveIdx(getActiveIndex());
+  }, [location.pathname, location.hash, user]);
+
+  // Scrollspy on landing page to keep active tab highlighted during scroll
+  useEffect(() => {
+    if (user || location.pathname !== '/') return;
+
+    const handleScroll = () => {
+      const scrollPos = window.scrollY + 220;
+      const featuresEl = document.getElementById('features');
+      const howItWorksEl = document.getElementById('how-it-works');
+      const pricingEl = document.getElementById('pricing');
+      const exploreJobsEl = document.getElementById('explore-jobs') || document.getElementById('jobs');
+
+      if (exploreJobsEl && scrollPos >= exploreJobsEl.offsetTop) {
+        setActiveIdx(3);
+      } else if (pricingEl && scrollPos >= pricingEl.offsetTop) {
+        setActiveIdx(2);
+      } else if (howItWorksEl && scrollPos >= howItWorksEl.offsetTop) {
+        setActiveIdx(1);
+      } else if (featuresEl && scrollPos >= featuresEl.offsetTop) {
+        setActiveIdx(0);
+      } else if (window.scrollY < 300) {
+        setActiveIdx(0);
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [user, location.pathname]);
+
   const handleNavChange = (index: number) => {
+    setActiveIdx(index);
     if (!user) {
       const targets = [
         { path: '/#features', id: 'features' },
         { path: '/#how-it-works', id: 'how-it-works' },
-        { path: '/pricing', id: '' },
-        { path: '/candidate/jobs', id: '' },
+        { path: '/#pricing', id: 'pricing' },
+        { path: '/#explore-jobs', id: 'explore-jobs' },
       ];
       const target = targets[index];
       if (!target) return;
@@ -133,13 +196,8 @@ export const JobzyNavbar: React.FC = () => {
         if (location.pathname !== '/') {
           navigate(target.path);
         } else {
-          const el = document.getElementById(target.id);
-          if (el) {
-            el.scrollIntoView({ behavior: 'smooth' });
-            window.history.pushState(null, '', `#${target.id}`);
-          } else {
-            navigate(target.path);
-          }
+          navigate(`/#${target.id}`);
+          scrollToSection(target.id);
         }
       } else {
         navigate(target.path);
@@ -199,7 +257,7 @@ export const JobzyNavbar: React.FC = () => {
         <LiquidNavbar
           items={activeNavItems}
           tone={isDark ? 'dark' : 'light'}
-          active={getActiveIndex()}
+          active={activeIdx}
           onChange={handleNavChange}
           sound={false}
           leftContent={

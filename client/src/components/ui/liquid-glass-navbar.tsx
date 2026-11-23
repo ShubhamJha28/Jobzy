@@ -477,8 +477,24 @@ export function LiquidNavbar({
   leftContent,
   rightContent,
 }: LiquidNavbarProps) {
-  const [inner, setInner] = React.useState(defaultActive)
-  const current = active ?? inner
+  const [inner, setInner] = React.useState(active ?? defaultActive)
+
+  // Keep internal state synced when controlled active prop changes
+  const prevActiveRef = React.useRef(active)
+  React.useEffect(() => {
+    if (active !== undefined && active !== null) {
+      setInner(active)
+      if (prevActiveRef.current !== active && active >= 0 && active < items.length) {
+        const kind = items[active]?.fx ?? (items[active]?.icon ? "pop" : "none")
+        if (kind !== "none") {
+          setFx({ i: active, n: Date.now() })
+        }
+      }
+      prevActiveRef.current = active
+    }
+  }, [active, items])
+
+  const current = inner
   const navRef = React.useRef<HTMLElement>(null)
   const canvasRef = React.useRef<HTMLCanvasElement>(null)
   const dropRef = React.useRef<HTMLSpanElement>(null)
@@ -489,6 +505,15 @@ export function LiquidNavbar({
   const [gl, setGl] = React.useState<"on" | "off">("on")
   const [refract, setRefract] = React.useState(false)
   const [fx, setFx] = React.useState({ i: -1, n: 0 })
+
+  React.useEffect(() => {
+    if (fx.i !== -1) {
+      const timer = setTimeout(() => {
+        setFx((prev) => ({ ...prev, i: -1 }))
+      }, 1200)
+      return () => clearTimeout(timer)
+    }
+  }, [fx.i, fx.n])
   const dark = tone === "dark" ? 1 : 0
   const darkRef = React.useRef(dark)
   darkRef.current = dark
@@ -749,12 +774,12 @@ export function LiquidNavbar({
     e?.preventDefault()
     e?.stopPropagation()
     const kind = items[i]?.fx ?? (items[i]?.icon ? "pop" : "none")
-    setFx((f) => ({ i, n: f.n + 1 }))
+    setFx({ i, n: Date.now() })
     plip()
     const c = iconCenter(i)
     if (c && kind === "drop") setTimeout(() => ripple(c.x, st.current.t.cy, 1.4), 430)
     if (c && kind === "plane") ripple(c.x, c.y, 0.6)
-    if (active === undefined) setInner(i)
+    setInner(i)
     onChange?.(i, items[i])
   }
 

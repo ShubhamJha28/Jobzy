@@ -1,15 +1,24 @@
 import React, { useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { GradFlow } from 'gradflow';
 import { useAuth } from '../../context/AuthContext';
+import { useTheme } from '../../context/ThemeContext';
 import { JobzyButton } from '../../components/JobzyButton';
 import { JobzyLogo } from '../../components/JobzyLogo';
-import { AlertCircle, Lock, Mail, Sparkles, ShieldCheck } from 'lucide-react';
+import { AlertCircle, Lock, Mail, Sparkles, ShieldCheck, User, Briefcase } from 'lucide-react';
 
 export const LoginPage: React.FC = () => {
   const { login } = useAuth();
+  const { theme } = useTheme();
+  const isDark = theme === 'dark';
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
+  const [role, setRole] = useState<'CANDIDATE' | 'RECRUITER'>(() => {
+    const r = searchParams.get('role')?.toUpperCase();
+    if (r === 'RECRUITER') return 'RECRUITER';
+    return 'CANDIDATE';
+  });
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -24,7 +33,7 @@ export const LoginPage: React.FC = () => {
     setIsLoading(true);
 
     try {
-      const user = await login(email, password);
+      const user = await login(email, password, role);
       if (user.role === 'CANDIDATE') navigate('/candidate/dashboard');
       else if (user.role === 'RECRUITER') navigate('/recruiter/dashboard');
       else navigate('/admin/dashboard');
@@ -35,14 +44,15 @@ export const LoginPage: React.FC = () => {
     }
   };
 
-  const handleDemoLogin = async (demoEmail: string) => {
+  const handleDemoLogin = async (demoEmail: string, demoRole: 'CANDIDATE' | 'RECRUITER') => {
+    setRole(demoRole);
     setEmail(demoEmail);
     setPassword('password123');
     setError(null);
     setIsLoading(true);
 
     try {
-      const user = await login(demoEmail, 'password123');
+      const user = await login(demoEmail, 'password123', demoRole);
       if (user.role === 'CANDIDATE') navigate('/candidate/dashboard');
       else if (user.role === 'RECRUITER') navigate('/recruiter/dashboard');
       else navigate('/admin/dashboard');
@@ -54,8 +64,37 @@ export const LoginPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-[85vh] flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-[#000000]">
-      <div className="max-w-md w-full space-y-8 bg-[#111111] border border-[#242424] p-8 sm:p-10 rounded-3xl shadow-2xl">
+    <div className="relative min-h-[85vh] flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+      {/* Background Animated GradFlow */}
+      <div className="fixed inset-0 w-full h-full pointer-events-none z-[-1] overflow-hidden">
+        <GradFlow
+          className="w-full h-full"
+          config={
+            isDark
+              ? {
+                  type: 'fold',
+                  color1: '#000000',
+                  color2: '#000000',
+                  color3: '#e0fe9e',
+                  speed: 0.5,
+                  scale: 1,
+                  noise: 0.12,
+                }
+              : {
+                  type: 'fold',
+                  color1: '#f8fafc',
+                  color2: '#f1f5f9',
+                  color3: '#84cc16',
+                  speed: 0.5,
+                  scale: 1,
+                  noise: 0.12,
+                }
+          }
+          interactive
+        />
+      </div>
+
+      <div className="relative z-10 max-w-md w-full space-y-6 bg-[#111111]/90 backdrop-blur-xl border border-[#242424] p-8 sm:p-10 rounded-3xl shadow-2xl">
         <div className="text-center">
           <JobzyLogo size="lg" to="/" />
           <h2 className="mt-6 text-2xl font-black text-white tracking-tight">
@@ -63,6 +102,47 @@ export const LoginPage: React.FC = () => {
           </h2>
           <p className="mt-1 text-xs text-[#A3A3A3]">
             Access your talent intelligence dashboard
+          </p>
+        </div>
+
+        {/* 1. ROLE SELECTION TOGGLE: CANDIDATE VS RECRUITER */}
+        <div className="space-y-1.5">
+          <div className="grid grid-cols-2 gap-2 bg-[#181818] p-1.5 rounded-2xl border border-[#2a2a2a]">
+            <button
+              type="button"
+              onClick={() => {
+                setRole('CANDIDATE');
+                setError(null);
+              }}
+              className={`flex items-center justify-center gap-2 py-2.5 px-3 text-xs font-bold rounded-xl transition-all cursor-pointer ${
+                role === 'CANDIDATE'
+                  ? 'bg-[#C4F167] text-[#000000] shadow-sm'
+                  : 'text-[#A3A3A3] hover:text-white'
+              }`}
+            >
+              <User className="w-3.5 h-3.5" />
+              <span>Candidate Login</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setRole('RECRUITER');
+                setError(null);
+              }}
+              className={`flex items-center justify-center gap-2 py-2.5 px-3 text-xs font-bold rounded-xl transition-all cursor-pointer ${
+                role === 'RECRUITER'
+                  ? 'bg-[#C4F167] text-[#000000] shadow-sm'
+                  : 'text-[#A3A3A3] hover:text-white'
+              }`}
+            >
+              <Briefcase className="w-3.5 h-3.5" />
+              <span>Recruiter Login</span>
+            </button>
+          </div>
+          <p className="text-[11px] text-center text-[#737373] font-mono">
+            {role === 'CANDIDATE'
+              ? 'Candidate Portal · Resume AI & Precision Job Matching'
+              : 'Recruiter Portal · Sourcing & Automated ATS Screening'}
           </p>
         </div>
 
@@ -79,7 +159,7 @@ export const LoginPage: React.FC = () => {
             <div className="grid grid-cols-2 gap-2 pt-1">
               <button
                 type="button"
-                onClick={() => handleDemoLogin('candidate@jobzy.ai')}
+                onClick={() => handleDemoLogin('candidate@jobzy.ai', 'CANDIDATE')}
                 className="text-left p-2.5 rounded-xl bg-[#1f1f1f] hover:bg-[#282828] border border-[#2e2e2e] transition-colors cursor-pointer"
               >
                 <span className="text-xs font-bold text-white block">Alex Rivera</span>
@@ -87,7 +167,7 @@ export const LoginPage: React.FC = () => {
               </button>
               <button
                 type="button"
-                onClick={() => handleDemoLogin('recruiter@jobzy.ai')}
+                onClick={() => handleDemoLogin('recruiter@jobzy.ai', 'RECRUITER')}
                 className="text-left p-2.5 rounded-xl bg-[#1f1f1f] hover:bg-[#282828] border border-[#2e2e2e] transition-colors cursor-pointer"
               >
                 <span className="text-xs font-bold text-white block">Sarah Chen</span>
@@ -96,7 +176,7 @@ export const LoginPage: React.FC = () => {
             </div>
             <button
               type="button"
-              onClick={() => handleDemoLogin('admin@jobzy.ai')}
+              onClick={() => handleDemoLogin('admin@jobzy.ai', 'CANDIDATE')}
               className="w-full text-center py-1.5 rounded-lg text-[11px] font-medium text-[#888888] hover:text-[#C4F167] transition-colors cursor-pointer"
             >
               Sign in as Elena Vance (Platform Admin) →
@@ -114,7 +194,7 @@ export const LoginPage: React.FC = () => {
         <form className="mt-6 space-y-4" onSubmit={handleSubmit}>
           <div>
             <label className="block text-xs font-semibold text-[#A3A3A3] mb-1">
-              Email Address
+              {role === 'CANDIDATE' ? 'Candidate Email Address' : 'Work Email Address'}
             </label>
             <div className="relative">
               <Mail className="w-4 h-4 text-[#666666] absolute left-3.5 top-3" />
@@ -123,7 +203,7 @@ export const LoginPage: React.FC = () => {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="you@company.com"
+                placeholder={role === 'CANDIDATE' ? 'alex@candidate.com' : 'recruiter@company.com'}
                 className="w-full bg-[#181818] border border-[#2a2a2a] rounded-xl pl-10 pr-4 py-2.5 text-sm text-white placeholder-[#555555] focus:outline-none focus:border-[#C4F167] transition-colors"
               />
             </div>
@@ -158,14 +238,17 @@ export const LoginPage: React.FC = () => {
             isLoading={isLoading}
             className="w-full mt-2"
           >
-            Sign In
+            Sign In as {role === 'CANDIDATE' ? 'Candidate' : 'Recruiter'}
           </JobzyButton>
         </form>
 
         <p className="text-center text-xs text-[#888888] pt-2">
           Don't have an account?{' '}
-          <Link to="/register" className="text-[#C4F167] font-semibold hover:underline">
-            Register now
+          <Link
+            to={`/register?role=${role.toLowerCase()}`}
+            className="text-[#C4F167] font-semibold hover:underline"
+          >
+            Register as {role === 'CANDIDATE' ? 'Candidate' : 'Recruiter'}
           </Link>
         </p>
 
