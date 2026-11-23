@@ -253,7 +253,10 @@ export const LandingPage: React.FC = () => {
           <h2 className="text-3xl sm:text-5xl font-black text-white tracking-tight">
             Plans Designed for Both Sides of Talent
           </h2>
-          <p className="text-sm text-[#A3A3A3]">
+          <p
+            className="text-sm text-white drop-shadow-[0_2px_10px_rgba(0,0,0,0.85)]"
+            style={{ textShadow: '0 2px 10px rgba(0,0,0,0.85)' }}
+          >
             Whether you're an ambitious engineer optimizing your career or a high-growth recruitment team screening hundreds of candidates.
           </p>
         </div>
