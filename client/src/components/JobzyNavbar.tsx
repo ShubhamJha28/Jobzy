@@ -249,6 +249,21 @@ export const JobzyNavbar: React.FC = () => {
 
   const isDark = theme === 'dark';
 
+  const logoTarget = !user
+    ? '/'
+    : user.role === 'CANDIDATE'
+    ? '/candidate/dashboard'
+    : user.role === 'RECRUITER'
+    ? '/recruiter/dashboard'
+    : '/admin/dashboard';
+
+  const handleLogoClick = (e: React.MouseEvent) => {
+    if (location.pathname === logoTarget) {
+      e.preventDefault();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
+
   return (
     <header className={`sticky top-0 z-40 w-full pt-3 pb-2 px-3 sm:px-6 lg:px-8 transition-colors duration-250 ${
       isDark ? 'bg-black/40 backdrop-blur-md' : 'bg-white/60 backdrop-blur-md border-b border-black/[0.04]'
@@ -261,8 +276,13 @@ export const JobzyNavbar: React.FC = () => {
           onChange={handleNavChange}
           sound={false}
           leftContent={
-            <div className="flex items-center pl-1">
-              <JobzyLogo size="md" withTagline={!user} to="/" />
+            <div className="flex items-center pl-1 border-0 outline-none bg-transparent">
+              <JobzyLogo
+                size="md"
+                withTagline={!user}
+                to={logoTarget}
+                onClick={handleLogoClick}
+              />
             </div>
           }
           rightContent={
