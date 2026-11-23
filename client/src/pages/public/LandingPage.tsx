@@ -58,19 +58,28 @@ export const LandingPage: React.FC = () => {
       </div>
       {/* 1. HERO SECTION */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 pb-16 text-center">
-        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#161616] border border-[#2a2a2a] text-xs font-semibold text-[#C4F167] mb-8">
-          <Sparkles className="w-3.5 h-3.5" />
-          <span>Next-Generation Talent Intelligence 2.0</span>
+        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#161616]/90 backdrop-blur-md border border-[#2a2a2a] text-xs font-semibold text-[#C4F167] mb-8 shadow-lg shadow-black/50 drop-shadow-[0_2px_8px_rgba(0,0,0,0.85)]">
+          <Sparkles className="w-3.5 h-3.5 drop-shadow-[0_1px_4px_rgba(0,0,0,0.8)]" />
+          <span className="drop-shadow-[0_1px_4px_rgba(0,0,0,0.8)]">Next-Generation Talent Intelligence 2.0</span>
         </div>
 
-        <h1 className="text-4xl sm:text-6xl lg:text-7xl font-black text-white tracking-tight leading-[1.08] max-w-5xl mx-auto">
+        <h1
+          className="text-4xl sm:text-6xl lg:text-7xl font-black text-white tracking-tight leading-[1.08] max-w-5xl mx-auto drop-shadow-[0_4px_20px_rgba(0,0,0,0.95)]"
+          style={{ textShadow: '0 2px 14px rgba(0,0,0,0.95), 0 4px 30px rgba(0,0,0,0.8)' }}
+        >
           Your Next Opportunity Starts With a{' '}
-          <span className="text-[#C4F167] underline decoration-[#C4F167]/30 decoration-wavy">
+          <span
+            className="text-[#C4F167] drop-shadow-[0_2px_12px_rgba(0,0,0,0.9)]"
+            style={{ textShadow: '0 2px 14px rgba(0,0,0,0.95), 0 4px 30px rgba(0,0,0,0.8)' }}
+          >
             Better Match.
           </span>
         </h1>
 
-        <p className="text-base sm:text-xl text-[#A3A3A3] max-w-2xl mx-auto mt-6 leading-relaxed font-normal">
+        <p
+          className="text-base sm:text-xl text-white max-w-2xl mx-auto mt-6 leading-relaxed font-normal drop-shadow-[0_2px_12px_rgba(0,0,0,0.9)]"
+          style={{ textShadow: '0 2px 12px rgba(0,0,0,0.9), 0 4px 20px rgba(0,0,0,0.7)' }}
+        >
           Analyze your resume, uncover hidden skill gaps, match with precision opportunities, and make smarter career moves with explainable AI.
         </p>
 
