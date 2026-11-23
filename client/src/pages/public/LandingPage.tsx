@@ -247,15 +247,21 @@ export const LandingPage: React.FC = () => {
       {/* 4. TRANSPARENT INVESTMENT PRICING PLANS */}
       <section id="pricing" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 scroll-mt-24 sm:scroll-mt-28">
         <div className="text-center max-w-3xl mx-auto space-y-4 mb-16">
-          <span className="text-xs font-bold text-[#C4F167] uppercase tracking-widest">
+          <span
+            className="text-xs font-bold text-[#C4F167] uppercase tracking-widest drop-shadow-[0_2px_8px_rgba(0,0,0,0.85)]"
+            style={{ textShadow: '0 1px 8px rgba(0,0,0,0.85)' }}
+          >
             Transparent Investment
           </span>
-          <h2 className="text-3xl sm:text-5xl font-black text-white tracking-tight">
+          <h2
+            className="text-3xl sm:text-5xl font-black text-white tracking-tight drop-shadow-[0_4px_20px_rgba(0,0,0,0.95)]"
+            style={{ textShadow: '0 2px 14px rgba(0,0,0,0.95), 0 4px 30px rgba(0,0,0,0.8)' }}
+          >
             Plans Designed for Both Sides of Talent
           </h2>
           <p
-            className="text-sm text-white drop-shadow-[0_2px_10px_rgba(0,0,0,0.85)]"
-            style={{ textShadow: '0 2px 10px rgba(0,0,0,0.85)' }}
+            className="text-sm sm:text-base text-white drop-shadow-[0_2px_12px_rgba(0,0,0,0.95)]"
+            style={{ textShadow: '0 2px 12px rgba(0,0,0,0.95), 0 4px 20px rgba(0,0,0,0.75)' }}
           >
             Whether you're an ambitious engineer optimizing your career or a high-growth recruitment team screening hundreds of candidates.
           </p>
