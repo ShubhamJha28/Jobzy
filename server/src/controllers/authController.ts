@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
 import prisma from '../config/prisma';
 import { signToken, AuthenticatedRequest } from '../middleware/auth';
 import { logAudit } from '../utils/logger';
@@ -11,6 +12,22 @@ export class AuthController {
 
       if (!email || !password || !name) {
         res.status(400).json({ success: false, message: 'Email, password, and name are required.' });
+        return;
+      }
+
+      // Password security policy
+      const hasMinLength = password.length >= 8;
+      const hasUppercase = /[A-Z]/.test(password);
+      const hasLowercase = /[a-z]/.test(password);
+      const hasNumber = /[0-9]/.test(password);
+      const hasSpecial = /[!@#$%^&*`~()_+\-=[\]{};':"\\|,.<>/?]/.test(password);
+
+      if (!hasMinLength || !hasUppercase || !hasLowercase || !hasNumber || !hasSpecial) {
+        res.status(400).json({
+          success: false,
+          message:
+            'Password must be at least 8 characters long and contain at least one uppercase letter (A–Z), one lowercase letter (a–z), one number (0–9), and one special character (!@#$%^&*).',
+        });
         return;
       }
 
@@ -202,6 +219,107 @@ export class AuthController {
     } catch (error: any) {
       console.error('getMe error:', error);
       res.status(500).json({ success: false, message: 'Failed to retrieve profile.' });
+    }
+  }
+
+  public static async forgotPassword(req: Request, res: Response): Promise<void> {
+    try {
+      const { email } = req.body;
+      if (!email) {
+        res.status(400).json({ success: false, message: 'Email address is required.' });
+        return;
+      }
+
+      const user = await prisma.user.findUnique({
+        where: { email: email.trim().toLowerCase() },
+      });
+
+      if (!user) {
+        res.status(404).json({ success: false, message: 'No registered account found with this email address.' });
+        return;
+      }
+
+      // Generate a signed password-reset token valid for 15 minutes
+      const resetToken = jwt.sign(
+        { id: user.id, email: user.email, type: 'password_reset' },
+        process.env.JWT_SECRET || 'jobzy_jwt_secret_enterprise_grade_security_key_2026',
+        { expiresIn: '15m' }
+      );
+
+      res.status(200).json({
+        success: true,
+        message: 'Account verified. You may now choose your new password.',
+        resetToken,
+        email: user.email,
+      });
+    } catch (error: any) {
+      console.error('forgotPassword error:', error);
+      res.status(500).json({ success: false, message: 'Failed to process password reset request.' });
+    }
+  }
+
+  public static async resetPassword(req: Request, res: Response): Promise<void> {
+    try {
+      const { resetToken, newPassword } = req.body;
+
+      if (!resetToken || !newPassword) {
+        res.status(400).json({ success: false, message: 'Reset token and new password are required.' });
+        return;
+      }
+
+      let decoded: any;
+      try {
+        decoded = jwt.verify(
+          resetToken,
+          process.env.JWT_SECRET || 'jobzy_jwt_secret_enterprise_grade_security_key_2026'
+        );
+      } catch (err: any) {
+        res.status(401).json({ success: false, message: 'Reset session has expired or is invalid. Please request a new one.' });
+        return;
+      }
+
+      if (decoded.type !== 'password_reset' || !decoded.id) {
+        res.status(401).json({ success: false, message: 'Invalid reset token.' });
+        return;
+      }
+
+      // Enforce the 5 password security criteria
+      const hasMinLength = newPassword.length >= 8;
+      const hasUppercase = /[A-Z]/.test(newPassword);
+      const hasLowercase = /[a-z]/.test(newPassword);
+      const hasNumber = /[0-9]/.test(newPassword);
+      const hasSpecial = /[!@#$%^&*`~()_+\-=[\]{};':"\\|,.<>/?]/.test(newPassword);
+
+      if (!hasMinLength || !hasUppercase || !hasLowercase || !hasNumber || !hasSpecial) {
+        res.status(400).json({
+          success: false,
+          message:
+            'Password must be at least 8 characters long and contain at least one uppercase letter (A–Z), one lowercase letter (a–z), one number (0–9), and one special character (!@#$%^&*).',
+        });
+        return;
+      }
+
+      const passwordHash = await bcrypt.hash(newPassword, 10);
+
+      await prisma.user.update({
+        where: { id: decoded.id },
+        data: { passwordHash },
+      });
+
+      await logAudit({
+        userId: decoded.id,
+        action: 'PASSWORD_RESET',
+        resource: 'USER',
+        details: { email: decoded.email },
+      });
+
+      res.status(200).json({
+        success: true,
+        message: 'Your password has been reset successfully. Please log in with your new password.',
+      });
+    } catch (error: any) {
+      console.error('resetPassword error:', error);
+      res.status(500).json({ success: false, message: 'Failed to reset password.' });
     }
   }
 }

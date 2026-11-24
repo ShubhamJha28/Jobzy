@@ -265,7 +265,7 @@ export const JobzyNavbar: React.FC = () => {
   };
 
   return (
-    <header className={`sticky top-0 z-40 w-full pt-3 pb-2 px-3 sm:px-6 lg:px-8 transition-colors duration-250 ${
+    <header className={`sticky top-0 z-40 w-full pt-3 pb-2 px-3 sm:px-6 lg:px-8 transition-colors duration-250 print:hidden ${
       isDark ? 'bg-black/40 backdrop-blur-md' : 'bg-white/60 backdrop-blur-md border-b border-black/[0.04]'
     }`}>
       <div className="max-w-7xl mx-auto">

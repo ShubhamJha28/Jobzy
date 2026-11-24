@@ -43,7 +43,7 @@ export const CandidateRankingPage: React.FC = () => {
   const [schedulingCandidate, setSchedulingCandidate] = useState<any | null>(null);
   const [interviewDate, setInterviewDate] = useState('');
   const [interviewType, setInterviewType] = useState('TECHNICAL');
-  const [meetingLink, setMeetingLink] = useState('https://meet.jobzy.ai/room/' + Math.random().toString(36).substring(2, 8));
+  const [meetingLink, setMeetingLink] = useState('https://meet.google.com/chh-mkmp-cqn');
   const [isScheduling, setIsScheduling] = useState(false);
 
   useEffect(() => {

@@ -57,7 +57,7 @@ export const JobzySidebar: React.FC<SidebarProps> = ({ role }) => {
   const links = role === 'CANDIDATE' ? candidateLinks : role === 'RECRUITER' ? recruiterLinks : adminLinks;
 
   return (
-    <aside className="w-64 bg-[#080808] border-r border-[#1e1e1e] flex flex-col justify-between p-4 shrink-0 hidden md:flex">
+    <aside className="w-64 bg-[#080808] border-r border-[#1e1e1e] flex flex-col justify-between p-4 shrink-0 hidden md:flex print:hidden">
       <div className="space-y-1">
         <div className="px-3 py-2 text-[11px] font-bold text-[#666666] uppercase tracking-wider">
           {role} Workspace

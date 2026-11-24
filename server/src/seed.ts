@@ -688,7 +688,7 @@ Key Responsibilities:
       applicationId: app1.id,
       scheduledAt: interviewDate,
       interviewType: 'TECHNICAL',
-      meetingLink: 'https://meet.jobzy.ai/room/techvanguard-alex-tech-01',
+      meetingLink: 'https://meet.google.com/chh-mkmp-cqn',
       location: 'Google Meet / Online',
       status: 'SCHEDULED',
       interviewer: 'David Kim (VP of Engineering)',

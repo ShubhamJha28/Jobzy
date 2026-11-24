@@ -30,7 +30,7 @@ export class InterviewController {
           applicationId,
           scheduledAt: new Date(scheduledAt),
           interviewType: interviewType || 'TECHNICAL',
-          meetingLink: meetingLink || 'https://meet.jobzy.ai/room/' + Math.random().toString(36).substring(2, 9),
+          meetingLink: meetingLink || 'https://meet.google.com/chh-mkmp-cqn',
           interviewer: interviewer || req.user?.name || 'Technical Team',
           status: 'SCHEDULED',
         },
@@ -85,7 +85,10 @@ export class InterviewController {
           where: { application: { candidateId: profile?.id } },
           include: {
             application: {
-              include: { job: { include: { company: true } } },
+              include: {
+                candidate: { include: { user: true } },
+                job: { include: { company: true } },
+              },
             },
           },
           orderBy: { scheduledAt: 'asc' },

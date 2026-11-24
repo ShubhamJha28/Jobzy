@@ -5,7 +5,22 @@ import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
 import { JobzyButton } from '../../components/JobzyButton';
 import { JobzyLogo } from '../../components/JobzyLogo';
-import { AlertCircle, Lock, Mail, Sparkles, ShieldCheck, User, Briefcase } from 'lucide-react';
+import { Modal } from '../../components/Modal';
+import { apiRequest } from '../../api/client';
+import {
+  AlertCircle,
+  Lock,
+  Mail,
+  Sparkles,
+  ShieldCheck,
+  User,
+  Briefcase,
+  CheckCircle2,
+  Circle,
+  Eye,
+  EyeOff,
+  KeyRound,
+} from 'lucide-react';
 
 export const LoginPage: React.FC = () => {
   const { login } = useAuth();
@@ -24,6 +39,107 @@ export const LoginPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [showAdminDemo, setShowAdminDemo] = useState(false);
+
+  // Forgot Password Modal State
+  const [forgotModalOpen, setForgotModalOpen] = useState(false);
+  const [resetStep, setResetStep] = useState<'EMAIL' | 'NEW_PASSWORD' | 'SUCCESS'>('EMAIL');
+  const [resetEmail, setResetEmail] = useState('');
+  const [resetToken, setResetToken] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [resetLoading, setResetLoading] = useState(false);
+  const [resetError, setResetError] = useState<string | null>(null);
+
+  const passwordRules = [
+    {
+      id: 'length',
+      label: 'Minimum 8 characters in length',
+      valid: newPassword.length >= 8,
+    },
+    {
+      id: 'uppercase',
+      label: 'At least one uppercase letter (A–Z)',
+      valid: /[A-Z]/.test(newPassword),
+    },
+    {
+      id: 'lowercase',
+      label: 'At least one lowercase letter (a–z)',
+      valid: /[a-z]/.test(newPassword),
+    },
+    {
+      id: 'number',
+      label: 'At least one number (0–9)',
+      valid: /[0-9]/.test(newPassword),
+    },
+    {
+      id: 'special',
+      label: 'At least one special character (!@#$%^&*)',
+      valid: /[!@#$%^&*`~()_+\-=[\]{};':"\\|,.<>/?]/.test(newPassword),
+    },
+  ];
+
+  const isNewPasswordValid =
+    passwordRules.every((rule) => rule.valid) &&
+    newPassword.length > 0 &&
+    newPassword === confirmPassword;
+
+  const handleRequestReset = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setResetError(null);
+    if (!resetEmail.trim()) {
+      setResetError('Please enter your registered email address.');
+      return;
+    }
+    setResetLoading(true);
+    try {
+      const res = await apiRequest<{ success: boolean; resetToken: string; message: string }>(
+        '/auth/forgot-password',
+        {
+          method: 'POST',
+          body: JSON.stringify({ email: resetEmail }),
+        }
+      );
+      if (res.success && res.resetToken) {
+        setResetToken(res.resetToken);
+        setResetStep('NEW_PASSWORD');
+      }
+    } catch (err: any) {
+      setResetError(err.message || 'Failed to verify email address.');
+    } finally {
+      setResetLoading(false);
+    }
+  };
+
+  const handleResetSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setResetError(null);
+
+    if (newPassword !== confirmPassword) {
+      setResetError('Passwords do not match.');
+      return;
+    }
+
+    if (!passwordRules.every((r) => r.valid)) {
+      setResetError('Please satisfy all 5 password requirements.');
+      return;
+    }
+
+    setResetLoading(true);
+    try {
+      const res = await apiRequest<{ success: boolean; message: string }>('/auth/reset-password', {
+        method: 'POST',
+        body: JSON.stringify({ resetToken, newPassword }),
+      });
+      if (res.success) {
+        setResetStep('SUCCESS');
+      }
+    } catch (err: any) {
+      setResetError(err.message || 'Failed to reset password.');
+    } finally {
+      setResetLoading(false);
+    }
+  };
 
   const isDemoVisible = searchParams.get('admin') === 'true' || searchParams.get('demo') === 'admin' || showAdminDemo;
 
@@ -214,9 +330,20 @@ export const LoginPage: React.FC = () => {
               <label className="block text-xs font-semibold text-[#A3A3A3]">
                 Password
               </label>
-              <a href="#" className="text-[11px] text-[#C4F167] hover:underline">
+              <button
+                type="button"
+                onClick={() => {
+                  setForgotModalOpen(true);
+                  setResetStep('EMAIL');
+                  setResetEmail(email || '');
+                  setNewPassword('');
+                  setConfirmPassword('');
+                  setResetError(null);
+                }}
+                className="text-[11px] text-[#C4F167] hover:underline cursor-pointer"
+              >
                 Forgot password?
-              </a>
+              </button>
             </div>
             <div className="relative">
               <Lock className="w-4 h-4 text-[#666666] absolute left-3.5 top-3" />
@@ -263,6 +390,201 @@ export const LoginPage: React.FC = () => {
           </button>
         </div>
       </div>
+
+      {/* Forgot / Reset Password Modal */}
+      <Modal
+        isOpen={forgotModalOpen}
+        onClose={() => setForgotModalOpen(false)}
+        title={
+          resetStep === 'SUCCESS'
+            ? 'Password Reset Complete'
+            : resetStep === 'NEW_PASSWORD'
+            ? 'Set New Password'
+            : 'Reset Your Password'
+        }
+        maxWidth="md"
+      >
+        {resetStep === 'EMAIL' && (
+          <form onSubmit={handleRequestReset} className="space-y-4">
+            <p className="text-xs text-[#A3A3A3] leading-relaxed">
+              Enter your registered email address below. We'll verify your account so you can securely set a new password.
+            </p>
+
+            {resetError && (
+              <div className="flex items-center gap-2 p-3 text-xs text-red-400 bg-red-950/20 border border-red-900/40 rounded-xl">
+                <AlertCircle className="w-4 h-4 shrink-0" />
+                <span>{resetError}</span>
+              </div>
+            )}
+
+            <div>
+              <label className="block text-xs font-semibold text-[#A3A3A3] mb-1">
+                Registered Email Address
+              </label>
+              <div className="relative">
+                <Mail className="w-4 h-4 text-[#666666] absolute left-3.5 top-3" />
+                <input
+                  type="email"
+                  required
+                  value={resetEmail}
+                  onChange={(e) => setResetEmail(e.target.value)}
+                  placeholder="e.g. alex@candidate.com"
+                  className="w-full bg-[#181818] border border-[#2a2a2a] rounded-xl pl-10 pr-4 py-2.5 text-sm text-white placeholder-[#555555] focus:outline-none focus:border-[#C4F167] transition-colors"
+                />
+              </div>
+            </div>
+
+            <div className="pt-2 flex items-center justify-end gap-2.5">
+              <JobzyButton
+                type="button"
+                variant="secondary"
+                size="sm"
+                onClick={() => setForgotModalOpen(false)}
+              >
+                Cancel
+              </JobzyButton>
+              <JobzyButton
+                type="submit"
+                variant="primary"
+                size="sm"
+                isLoading={resetLoading}
+              >
+                Continue
+              </JobzyButton>
+            </div>
+          </form>
+        )}
+
+        {resetStep === 'NEW_PASSWORD' && (
+          <form onSubmit={handleResetSubmit} className="space-y-4">
+            <div className="p-3 bg-[#181818] border border-[#2a2a2a] rounded-xl text-xs text-[#A3A3A3]">
+              Setting new password for: <span className="font-semibold text-white">{resetEmail}</span>
+            </div>
+
+            {resetError && (
+              <div className="flex items-center gap-2 p-3 text-xs text-red-400 bg-red-950/20 border border-red-900/40 rounded-xl">
+                <AlertCircle className="w-4 h-4 shrink-0" />
+                <span>{resetError}</span>
+              </div>
+            )}
+
+            <div>
+              <label className="block text-xs font-semibold text-[#A3A3A3] mb-1">
+                New Password
+              </label>
+              <div className="relative">
+                <Lock className="w-4 h-4 text-[#666666] absolute left-3.5 top-3" />
+                <input
+                  type={showNewPassword ? 'text' : 'password'}
+                  required
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  placeholder="Enter new password"
+                  className="w-full bg-[#181818] border border-[#2a2a2a] rounded-xl pl-10 pr-10 py-2.5 text-sm text-white placeholder-[#555555] focus:outline-none focus:border-[#C4F167] transition-colors"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowNewPassword(!showNewPassword)}
+                  className="absolute right-3.5 top-3 text-[#666666] hover:text-[#A3A3A3] transition-colors cursor-pointer"
+                >
+                  {showNewPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+
+              {/* 5-Rule Checklist */}
+              <div className="mt-2.5 p-3.5 bg-[#161616] border border-[#262626] rounded-2xl space-y-2">
+                <p className="text-[11px] font-bold text-[#A3A3A3] uppercase tracking-wider">
+                  Password Requirements
+                </p>
+                <div className="space-y-1.5 pt-0.5">
+                  {passwordRules.map((rule) => (
+                    <div
+                      key={rule.id}
+                      className={`flex items-center gap-2 text-xs transition-colors duration-200 ${
+                        rule.valid ? 'text-[#C4F167] font-medium' : 'text-[#777777]'
+                      }`}
+                    >
+                      {rule.valid ? (
+                        <CheckCircle2 className="w-4 h-4 text-[#C4F167] shrink-0" />
+                      ) : (
+                        <Circle className="w-4 h-4 text-[#444444] shrink-0" />
+                      )}
+                      <span>{rule.label}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-[#A3A3A3] mb-1">
+                Confirm New Password
+              </label>
+              <div className="relative">
+                <Lock className="w-4 h-4 text-[#666666] absolute left-3.5 top-3" />
+                <input
+                  type={showNewPassword ? 'text' : 'password'}
+                  required
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  placeholder="Re-enter new password"
+                  className="w-full bg-[#181818] border border-[#2a2a2a] rounded-xl pl-10 pr-4 py-2.5 text-sm text-white placeholder-[#555555] focus:outline-none focus:border-[#C4F167] transition-colors"
+                />
+              </div>
+              {confirmPassword && newPassword !== confirmPassword && (
+                <p className="text-[11px] text-red-400 mt-1">Passwords do not match</p>
+              )}
+            </div>
+
+            <div className="pt-2 flex items-center justify-end gap-2.5">
+              <JobzyButton
+                type="button"
+                variant="secondary"
+                size="sm"
+                onClick={() => setResetStep('EMAIL')}
+              >
+                Back
+              </JobzyButton>
+              <JobzyButton
+                type="submit"
+                variant="primary"
+                size="sm"
+                disabled={!isNewPasswordValid}
+                isLoading={resetLoading}
+              >
+                Reset Password
+              </JobzyButton>
+            </div>
+          </form>
+        )}
+
+        {resetStep === 'SUCCESS' && (
+          <div className="text-center py-4 space-y-4">
+            <div className="w-12 h-12 rounded-full bg-[#C4F167]/10 border border-[#C4F167]/30 flex items-center justify-center mx-auto text-[#C4F167]">
+              <CheckCircle2 className="w-6 h-6" />
+            </div>
+            <div>
+              <h4 className="text-base font-bold text-white">Password Reset Successful!</h4>
+              <p className="text-xs text-[#A3A3A3] mt-1 max-w-sm mx-auto">
+                Your password has been securely updated in the database. You can now log in with your new credentials.
+              </p>
+            </div>
+            <JobzyButton
+              type="button"
+              variant="primary"
+              size="md"
+              className="w-full mt-2"
+              onClick={() => {
+                setForgotModalOpen(false);
+                setEmail(resetEmail);
+                setPassword('');
+              }}
+            >
+              Back to Sign In
+            </JobzyButton>
+          </div>
+        )}
+      </Modal>
     </div>
   );
 };

@@ -5,7 +5,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
 import { JobzyButton } from '../../components/JobzyButton';
 import { JobzyLogo } from '../../components/JobzyLogo';
-import { AlertCircle, User, Mail, Lock, Building, Briefcase } from 'lucide-react';
+import { AlertCircle, User, Mail, Lock, Building, Briefcase, Eye, EyeOff, CheckCircle2, Circle } from 'lucide-react';
 
 export const RegisterPage: React.FC = () => {
   const { register } = useAuth();
@@ -22,13 +22,48 @@ export const RegisterPage: React.FC = () => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [companyName, setCompanyName] = useState('');
   const [designation, setDesignation] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
+  const passwordRules = [
+    {
+      id: 'length',
+      label: 'Minimum 8 characters in length',
+      valid: password.length >= 8,
+    },
+    {
+      id: 'uppercase',
+      label: 'At least one uppercase letter (A–Z)',
+      valid: /[A-Z]/.test(password),
+    },
+    {
+      id: 'lowercase',
+      label: 'At least one lowercase letter (a–z)',
+      valid: /[a-z]/.test(password),
+    },
+    {
+      id: 'number',
+      label: 'At least one number (0–9)',
+      valid: /[0-9]/.test(password),
+    },
+    {
+      id: 'special',
+      label: 'At least one special character (!@#$%^&*)',
+      valid: /[!@#$%^&*`~()_+\-=[\]{};':"\\|,.<>/?]/.test(password),
+    },
+  ];
+
+  const isPasswordValid = passwordRules.every((rule) => rule.valid);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!isPasswordValid) {
+      setError('Please fulfill all 5 password security requirements before creating your account.');
+      return;
+    }
     setError(null);
     setIsLoading(true);
 
@@ -170,13 +205,45 @@ export const RegisterPage: React.FC = () => {
             <div className="relative">
               <Lock className="w-4 h-4 text-[#666666] absolute left-3.5 top-3" />
               <input
-                type="password"
+                type={showPassword ? 'text' : 'password'}
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="Min. 8 characters"
-                className="w-full bg-[#181818] border border-[#2a2a2a] rounded-xl pl-10 pr-4 py-2.5 text-sm text-white placeholder-[#555555] focus:outline-none focus:border-[#C4F167] transition-colors"
+                placeholder="Create strong password"
+                className="w-full bg-[#181818] border border-[#2a2a2a] rounded-xl pl-10 pr-10 py-2.5 text-sm text-white placeholder-[#555555] focus:outline-none focus:border-[#C4F167] transition-colors"
               />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3.5 top-3 text-[#666666] hover:text-[#A3A3A3] transition-colors cursor-pointer"
+                title={showPassword ? 'Hide password' : 'Show password'}
+              >
+                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
+            </div>
+
+            {/* Live Password Requirements Checklist */}
+            <div className="mt-2.5 p-3.5 bg-[#161616] border border-[#262626] rounded-2xl space-y-2">
+              <p className="text-[11px] font-bold text-[#A3A3A3] uppercase tracking-wider">
+                Password Requirements
+              </p>
+              <div className="space-y-1.5 pt-0.5">
+                {passwordRules.map((rule) => (
+                  <div
+                    key={rule.id}
+                    className={`flex items-center gap-2 text-xs transition-colors duration-200 ${
+                      rule.valid ? 'text-[#C4F167] font-medium' : 'text-[#777777]'
+                    }`}
+                  >
+                    {rule.valid ? (
+                      <CheckCircle2 className="w-4 h-4 text-[#C4F167] shrink-0" />
+                    ) : (
+                      <Circle className="w-4 h-4 text-[#444444] shrink-0" />
+                    )}
+                    <span>{rule.label}</span>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
 
@@ -223,6 +290,7 @@ export const RegisterPage: React.FC = () => {
             size="md"
             variant="primary"
             isLoading={isLoading}
+            disabled={!isPasswordValid}
             className="w-full mt-4"
           >
             Complete Registration

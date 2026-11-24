@@ -136,13 +136,11 @@ export const InterviewsPage: React.FC = () => {
 
               {/* Actions */}
               <div className="flex items-center gap-3 w-full md:w-auto justify-between md:justify-end border-t md:border-t-0 pt-3 md:pt-0 border-[#222222]">
-                {item.meetingLink && (
-                  <a href={item.meetingLink} target="_blank" rel="noreferrer">
-                    <JobzyButton size="sm" variant="secondary" leftIcon={<Video className="w-3.5 h-3.5" />}>
-                      Join Room
-                    </JobzyButton>
-                  </a>
-                )}
+                <a href={item.meetingLink || "https://meet.google.com/chh-mkmp-cqn"} target="_blank" rel="noreferrer">
+                  <JobzyButton size="sm" variant="secondary" leftIcon={<Video className="w-3.5 h-3.5" />}>
+                    Join Meeting Room
+                  </JobzyButton>
+                </a>
 
                 {item.status !== 'COMPLETED' && (
                   <JobzyButton

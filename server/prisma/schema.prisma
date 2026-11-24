@@ -1,6 +1,5 @@
-// JOBZY Database Schema - Prisma ORM
 datasource db {
-  provider = "sqlite"
+  provider = "mongodb"
   url      = env("DATABASE_URL")
 }
 
@@ -9,7 +8,7 @@ generator client {
 }
 
 model User {
-  id           String            @id @default(uuid())
+  id           String            @id @default(auto()) @map("_id") @db.ObjectId
   email        String            @unique
   passwordHash String
   name         String
@@ -25,7 +24,7 @@ model User {
 }
 
 model Company {
-  id          String   @id @default(uuid())
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
   name        String
   logo        String?
   website     String?
@@ -41,21 +40,21 @@ model Company {
 }
 
 model CandidateProfile {
-  id              String   @id @default(uuid())
-  userId          String   @unique
-  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  phone           String?
-  location        String?
-  title           String?
-  bio             String?
-  linkedinUrl     String?
-  githubUrl       String?
-  portfolioUrl    String?
-  experienceYears Float    @default(0)
-  education       String?  // JSON string of education history
+  id               String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId           String   @unique @db.ObjectId
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  phone            String?
+  location         String?
+  title            String?
+  bio              String?
+  linkedinUrl      String?
+  githubUrl        String?
+  portfolioUrl     String?
+  experienceYears  Float    @default(0)
+  education        String?  // JSON string of education history
   extractedProfile String? // Full JSON parsed candidate profile
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
 
   resumes         Resume[]
   skills          CandidateSkill[]
@@ -67,10 +66,10 @@ model CandidateProfile {
 }
 
 model RecruiterProfile {
-  id          String   @id @default(uuid())
-  userId      String   @unique
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId      String   @unique @db.ObjectId
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  companyId   String?
+  companyId   String?  @db.ObjectId
   company     Company? @relation(fields: [companyId], references: [id], onDelete: SetNull)
   designation String?
   department  String?
@@ -82,8 +81,8 @@ model RecruiterProfile {
 }
 
 model Resume {
-  id               String            @id @default(uuid())
-  candidateId      String
+  id               String            @id @default(auto()) @map("_id") @db.ObjectId
+  candidateId      String            @db.ObjectId
   candidate        CandidateProfile  @relation(fields: [candidateId], references: [id], onDelete: Cascade)
   originalFileName String
   filePath         String
@@ -102,8 +101,8 @@ model Resume {
 }
 
 model ResumeVersion {
-  id          String   @id @default(uuid())
-  resumeId    String
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  resumeId    String   @db.ObjectId
   resume      Resume   @relation(fields: [resumeId], references: [id], onDelete: Cascade)
   versionName String
   content     String   // Full text or JSON content
@@ -112,7 +111,7 @@ model ResumeVersion {
 }
 
 model Skill {
-  id        String   @id @default(uuid())
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
   name      String   @unique
   category  String   @default("TECHNICAL") // TECHNICAL, SOFT, DOMAIN
   synonyms  String?  // JSON array of aliases/synonyms
@@ -123,10 +122,10 @@ model Skill {
 }
 
 model CandidateSkill {
-  id                  String           @id @default(uuid())
-  candidateId         String
+  id                  String           @id @default(auto()) @map("_id") @db.ObjectId
+  candidateId         String           @db.ObjectId
   candidate           CandidateProfile @relation(fields: [candidateId], references: [id], onDelete: Cascade)
-  skillId             String
+  skillId             String           @db.ObjectId
   skill               Skill            @relation(fields: [skillId], references: [id], onDelete: Cascade)
   proficiencyEstimate String           @default("INTERMEDIATE") // BEGINNER, INTERMEDIATE, ADVANCED
   experienceMonths    Int              @default(12)
@@ -137,8 +136,8 @@ model CandidateSkill {
 }
 
 model Project {
-  id                   String           @id @default(uuid())
-  candidateId          String
+  id                   String           @id @default(auto()) @map("_id") @db.ObjectId
+  candidateId          String           @db.ObjectId
   candidate            CandidateProfile @relation(fields: [candidateId], references: [id], onDelete: Cascade)
   name                 String
   description          String?
@@ -150,10 +149,10 @@ model Project {
 }
 
 model Job {
-  id                 String           @id @default(uuid())
-  recruiterId        String
+  id                 String           @id @default(auto()) @map("_id") @db.ObjectId
+  recruiterId        String           @db.ObjectId
   recruiter          RecruiterProfile @relation(fields: [recruiterId], references: [id], onDelete: Cascade)
-  companyId          String?
+  companyId          String?          @db.ObjectId
   company            Company?         @relation(fields: [companyId], references: [id], onDelete: SetNull)
   title              String
   description        String
@@ -182,10 +181,10 @@ model Job {
 }
 
 model JobRequirement {
-  id            String   @id @default(uuid())
-  jobId         String
+  id            String   @id @default(auto()) @map("_id") @db.ObjectId
+  jobId         String   @db.ObjectId
   job           Job      @relation(fields: [jobId], references: [id], onDelete: Cascade)
-  skillId       String
+  skillId       String   @db.ObjectId
   skill         Skill    @relation(fields: [skillId], references: [id], onDelete: Cascade)
   importance    String   @default("MANDATORY") // MANDATORY, PREFERRED
   requiredLevel String   @default("INTERMEDIATE") // BEGINNER, INTERMEDIATE, ADVANCED
@@ -195,12 +194,12 @@ model JobRequirement {
 }
 
 model Application {
-  id          String   @id @default(uuid())
-  candidateId String
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  candidateId String   @db.ObjectId
   candidate   CandidateProfile @relation(fields: [candidateId], references: [id], onDelete: Cascade)
-  jobId       String
+  jobId       String   @db.ObjectId
   job         Job              @relation(fields: [jobId], references: [id], onDelete: Cascade)
-  resumeId    String?
+  resumeId    String?  @db.ObjectId
   resume      Resume?          @relation(fields: [resumeId], references: [id], onDelete: SetNull)
   status      String           @default("APPLIED") 
   // APPLIED, UNDER_REVIEW, SHORTLISTED, INTERVIEW_SCHEDULED, INTERVIEW_COMPLETED, OFFER_EXTENDED, HIRED, REJECTED, WITHDRAWN
@@ -216,8 +215,8 @@ model Application {
 }
 
 model ApplicationStatusHistory {
-  id             String      @id @default(uuid())
-  applicationId  String
+  id             String      @id @default(auto()) @map("_id") @db.ObjectId
+  applicationId  String      @db.ObjectId
   application    Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
   previousStatus String?
   newStatus      String
@@ -227,12 +226,12 @@ model ApplicationStatusHistory {
 }
 
 model Analysis {
-  id                   String           @id @default(uuid())
-  candidateId          String
+  id                   String           @id @default(auto()) @map("_id") @db.ObjectId
+  candidateId          String           @db.ObjectId
   candidate            CandidateProfile @relation(fields: [candidateId], references: [id], onDelete: Cascade)
-  resumeId             String
+  resumeId             String           @db.ObjectId
   resume               Resume           @relation(fields: [resumeId], references: [id], onDelete: Cascade)
-  jobId                String?
+  jobId                String?          @db.ObjectId
   job                  Job?             @relation(fields: [jobId], references: [id], onDelete: SetNull)
   overallScore         Float            @default(0)
   atsReadabilityScore  Float            @default(0)
@@ -250,10 +249,10 @@ model Analysis {
 }
 
 model CandidateMatch {
-  id                  String           @id @default(uuid())
-  candidateId         String
+  id                  String           @id @default(auto()) @map("_id") @db.ObjectId
+  candidateId         String           @db.ObjectId
   candidate           CandidateProfile @relation(fields: [candidateId], references: [id], onDelete: Cascade)
-  jobId               String
+  jobId               String           @db.ObjectId
   job                 Job              @relation(fields: [jobId], references: [id], onDelete: Cascade)
   overallScore        Float            @default(0)
   skillScore          Float            @default(0)
@@ -270,12 +269,12 @@ model CandidateMatch {
 }
 
 model Shortlist {
-  id          String           @id @default(uuid())
-  recruiterId String
+  id          String           @id @default(auto()) @map("_id") @db.ObjectId
+  recruiterId String           @db.ObjectId
   recruiter   RecruiterProfile @relation(fields: [recruiterId], references: [id], onDelete: Cascade)
-  jobId       String
+  jobId       String           @db.ObjectId
   job         Job              @relation(fields: [jobId], references: [id], onDelete: Cascade)
-  candidateId String
+  candidateId String           @db.ObjectId
   candidate   CandidateProfile @relation(fields: [candidateId], references: [id], onDelete: Cascade)
   notes       String?
   createdAt   DateTime         @default(now())
@@ -284,8 +283,8 @@ model Shortlist {
 }
 
 model Interview {
-  id            String      @id @default(uuid())
-  applicationId String
+  id            String      @id @default(auto()) @map("_id") @db.ObjectId
+  applicationId String      @db.ObjectId
   application   Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
   scheduledAt   DateTime
   interviewType String      @default("TECHNICAL") // TECHNICAL, HR, SYSTEM_DESIGN, SCREENING
@@ -300,8 +299,8 @@ model Interview {
 }
 
 model Notification {
-  id        String    @id @default(uuid())
-  userId    String
+  id        String    @id @default(auto()) @map("_id") @db.ObjectId
+  userId    String    @db.ObjectId
   user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   title     String
   message   String
@@ -312,8 +311,8 @@ model Notification {
 }
 
 model AIRecommendation {
-  id            String   @id @default(uuid())
-  resumeId      String
+  id            String   @id @default(auto()) @map("_id") @db.ObjectId
+  resumeId      String   @db.ObjectId
   resume        Resume   @relation(fields: [resumeId], references: [id], onDelete: Cascade)
   category      String   // SUMMARY, EXPERIENCE, SKILL, PROJECT
   priority      String   @default("MEDIUM") // HIGH, MEDIUM, LOW
@@ -326,8 +325,8 @@ model AIRecommendation {
 }
 
 model AuditLog {
-  id        String   @id @default(uuid())
-  userId    String?
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId    String?  @db.ObjectId
   user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
   action    String
   resource  String

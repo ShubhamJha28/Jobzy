@@ -181,21 +181,19 @@ export const MyApplications: React.FC = () => {
                         </p>
                       </div>
 
-                      {app.interviews[0].meetingLink && (
-                        <a
-                          href={app.interviews[0].meetingLink}
-                          target="_blank"
-                          rel="noreferrer"
+                      <a
+                        href={app.interviews[0].meetingLink || "https://meet.google.com/chh-mkmp-cqn"}
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        <JobzyButton
+                          size="sm"
+                          variant="primary"
+                          leftIcon={<Video className="w-3.5 h-3.5" />}
                         >
-                          <JobzyButton
-                            size="sm"
-                            variant="primary"
-                            leftIcon={<Video className="w-3.5 h-3.5" />}
-                          >
-                            Join Meeting Room
-                          </JobzyButton>
-                        </a>
-                      )}
+                          Join Meeting Room
+                        </JobzyButton>
+                      </a>
                     </div>
                   </div>
                 )}

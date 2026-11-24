@@ -64,7 +64,12 @@ export const ResumeBuilder: React.FC = () => {
   ]);
 
   const handlePrint = () => {
+    const originalTitle = document.title;
+    document.title = `${personal.name.trim() || 'Resume'} - Jobzy`;
     window.print();
+    setTimeout(() => {
+      document.title = originalTitle;
+    }, 1000);
   };
 
   const addExperience = () => {
@@ -86,8 +91,8 @@ export const ResumeBuilder: React.FC = () => {
   };
 
   return (
-    <div className="space-y-8">
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-2 border-b border-[#1f1f1f]">
+    <div className="space-y-8 print:space-y-0 print:m-0 print:p-0">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-2 border-b border-[#1f1f1f] print:hidden">
         <div>
           <h1 className="text-2xl font-black text-white tracking-tight">AI Resume Builder</h1>
           <p className="text-xs text-[#A3A3A3] mt-1">
@@ -107,9 +112,9 @@ export const ResumeBuilder: React.FC = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start print:block print:w-full">
         {/* Left: Input Form Controls */}
-        <div className="space-y-6">
+        <div className="space-y-6 print:hidden">
           {/* Personal Info */}
           <JobzyCard className="p-5 space-y-3">
             <h3 className="text-xs font-bold text-white uppercase tracking-wider">
@@ -280,9 +285,12 @@ export const ResumeBuilder: React.FC = () => {
         </div>
 
         {/* Right: Live A4 Formatted Document Preview */}
-        <div className="sticky top-20 bg-white text-black p-8 sm:p-10 rounded-2xl shadow-2xl border border-gray-300 font-sans print:m-0 print:p-0 print:border-none print:shadow-none min-h-[750px]">
+        <div
+          id="printable-resume"
+          className="resume-sheet sticky top-20 bg-white text-black p-8 sm:p-10 rounded-2xl shadow-2xl border border-gray-300 font-sans print:static print:m-0 print:border-none print:shadow-none print:rounded-none print:w-full print:max-w-none print:min-h-0 min-h-[750px]"
+        >
           {/* Header */}
-          <div className="border-b-2 border-black pb-4 text-center">
+          <div className="border-b-2 border-black pb-4 text-center break-inside-avoid print:break-inside-avoid">
             <h2 className="text-2xl font-black uppercase tracking-tight text-black">{personal.name}</h2>
             <p className="text-xs font-semibold text-gray-700 mt-1">{personal.title}</p>
             <p className="text-[11px] text-gray-600 mt-1 space-x-2">
@@ -295,7 +303,7 @@ export const ResumeBuilder: React.FC = () => {
 
           {/* Summary */}
           {summary && (
-            <div className="mt-4">
+            <div className="mt-4 break-inside-avoid print:break-inside-avoid">
               <h3 className="text-xs font-bold uppercase tracking-wider border-b border-gray-400 pb-0.5 text-black">
                 Professional Summary
               </h3>
@@ -305,7 +313,7 @@ export const ResumeBuilder: React.FC = () => {
 
           {/* Skills */}
           {skills && (
-            <div className="mt-4">
+            <div className="mt-4 break-inside-avoid print:break-inside-avoid">
               <h3 className="text-xs font-bold uppercase tracking-wider border-b border-gray-400 pb-0.5 text-black">
                 Technical Skills
               </h3>
@@ -320,7 +328,7 @@ export const ResumeBuilder: React.FC = () => {
             </h3>
             <div className="space-y-3 mt-2">
               {experiences.map((exp, i) => (
-                <div key={i} className="text-[11px]">
+                <div key={i} className="text-[11px] break-inside-avoid print:break-inside-avoid">
                   <div className="flex justify-between font-bold text-gray-900">
                     <span>{exp.title} | {exp.company}</span>
                     <span className="font-normal text-gray-600">{exp.dates}</span>
@@ -336,7 +344,7 @@ export const ResumeBuilder: React.FC = () => {
           </div>
 
           {/* Education */}
-          <div className="mt-4">
+          <div className="mt-4 break-inside-avoid print:break-inside-avoid">
             <h3 className="text-xs font-bold uppercase tracking-wider border-b border-gray-400 pb-0.5 text-black">
               Education
             </h3>
@@ -351,13 +359,13 @@ export const ResumeBuilder: React.FC = () => {
           </div>
 
           {/* Projects */}
-          <div className="mt-4">
+          <div className="mt-4 break-inside-avoid print:break-inside-avoid">
             <h3 className="text-xs font-bold uppercase tracking-wider border-b border-gray-400 pb-0.5 text-black">
               Key Projects
             </h3>
             <div className="space-y-2 mt-2 text-[11px]">
               {projects.map((proj, i) => (
-                <div key={i}>
+                <div key={i} className="break-inside-avoid print:break-inside-avoid">
                   <div className="flex justify-between font-bold text-gray-900">
                     <span>{proj.name}</span>
                     <span className="font-mono text-[10px] text-gray-600 font-normal">{proj.tech}</span>

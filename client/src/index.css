@@ -137,3 +137,62 @@ html.light select {
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
+
+/* Print Styles: Hide all site chrome, headers, inputs, and export clean resume document */
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 0mm !important; /* Zero margin removes browser headers (date/title) and footers (url/page numbers) */
+  }
+
+  html,
+  body,
+  #root {
+    background: #ffffff !important;
+    background-color: #ffffff !important;
+    color: #000000 !important;
+    overflow: visible !important;
+    height: auto !important;
+    min-height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Hide navigation, sidebars, website headers, footers, forms, buttons */
+  nav,
+  header,
+  aside,
+  footer,
+  .no-print,
+  .print-hidden,
+  .print\:hidden {
+    display: none !important;
+  }
+
+  main {
+    padding: 0 !important;
+    margin: 0 !important;
+    overflow: visible !important;
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  /* Resume sheet styles in print: elegant paper margins via internal padding */
+  .resume-sheet {
+    box-shadow: none !important;
+    border: none !important;
+    border-radius: 0 !important;
+    padding: 14mm 18mm !important;
+    margin: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-height: 0 !important;
+    position: static !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+    box-sizing: border-box !important;
+  }
+}
+

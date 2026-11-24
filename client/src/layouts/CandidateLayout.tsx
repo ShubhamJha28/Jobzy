@@ -21,12 +21,16 @@ export const CandidateLayout: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-transparent text-[var(--text-primary)] transition-colors duration-250">
-      <JobzyNavbar />
-      <div className="flex-1 flex overflow-hidden">
-        <JobzySidebar role="CANDIDATE" />
-        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 bg-transparent">
-          <div className="max-w-6xl mx-auto">
+    <div className="min-h-screen flex flex-col bg-transparent text-[var(--text-primary)] transition-colors duration-250 print:block print:min-h-0 print:bg-white print:text-black">
+      <div className="print:hidden">
+        <JobzyNavbar />
+      </div>
+      <div className="flex-1 flex overflow-hidden print:block print:overflow-visible">
+        <div className="print:hidden">
+          <JobzySidebar role="CANDIDATE" />
+        </div>
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 bg-transparent print:p-0 print:m-0 print:overflow-visible print:w-full print:max-w-none">
+          <div className="max-w-6xl mx-auto print:max-w-none print:m-0 print:p-0 print:w-full">
             <Outlet />
           </div>
         </main>
