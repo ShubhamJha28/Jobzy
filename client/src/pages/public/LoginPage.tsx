@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { Link, useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { GradFlow } from 'gradflow';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
@@ -27,7 +27,21 @@ export const LoginPage: React.FC = () => {
   const { theme } = useTheme();
   const isDark = theme === 'dark';
   const navigate = useNavigate();
+  const location = useLocation();
   const [searchParams] = useSearchParams();
+
+  const [hasAdminHash, setHasAdminHash] = useState<boolean>(() => {
+    return window.location.hash.toLowerCase() === '#admin' || location.hash.toLowerCase() === '#admin';
+  });
+
+  useEffect(() => {
+    const handleHash = () => {
+      setHasAdminHash(window.location.hash.toLowerCase() === '#admin' || location.hash.toLowerCase() === '#admin');
+    };
+    handleHash();
+    window.addEventListener('hashchange', handleHash);
+    return () => window.removeEventListener('hashchange', handleHash);
+  }, [location.hash]);
 
   const [role, setRole] = useState<'CANDIDATE' | 'RECRUITER'>(() => {
     const r = searchParams.get('role')?.toUpperCase();
@@ -38,7 +52,6 @@ export const LoginPage: React.FC = () => {
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [showAdminDemo, setShowAdminDemo] = useState(false);
 
   // Forgot Password Modal State
   const [forgotModalOpen, setForgotModalOpen] = useState(false);
@@ -141,7 +154,7 @@ export const LoginPage: React.FC = () => {
     }
   };
 
-  const isDemoVisible = searchParams.get('admin') === 'true' || searchParams.get('demo') === 'admin' || showAdminDemo;
+  const isDemoVisible = hasAdminHash || location.hash.toLowerCase() === '#admin';
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -160,8 +173,8 @@ export const LoginPage: React.FC = () => {
     }
   };
 
-  const handleDemoLogin = async (demoEmail: string, demoRole: 'CANDIDATE' | 'RECRUITER') => {
-    setRole(demoRole);
+  const handleDemoLogin = async (demoEmail: string, demoRole?: 'CANDIDATE' | 'RECRUITER') => {
+    if (demoRole) setRole(demoRole);
     setEmail(demoEmail);
     setPassword('password123');
     setError(null);
@@ -292,7 +305,7 @@ export const LoginPage: React.FC = () => {
             </div>
             <button
               type="button"
-              onClick={() => handleDemoLogin('admin@jobzy.ai', 'CANDIDATE')}
+              onClick={() => handleDemoLogin('admin@jobzy.ai')}
               className="w-full text-center py-1.5 rounded-lg text-[11px] font-medium text-[#888888] hover:text-[#C4F167] transition-colors cursor-pointer"
             >
               Sign in as Elena Vance (Platform Admin) →
@@ -379,16 +392,21 @@ export const LoginPage: React.FC = () => {
           </Link>
         </p>
 
-        <div className="pt-3 border-t border-[#1e1e1e] text-center">
-          <button
-            type="button"
-            onClick={() => setShowAdminDemo(!showAdminDemo)}
-            className="text-[11px] text-[#555555] hover:text-[#A3A3A3] transition-colors inline-flex items-center gap-1 cursor-pointer"
-          >
-            <ShieldCheck className="w-3.5 h-3.5" />
-            <span>{isDemoVisible ? 'Hide Admin Demo Mode' : 'Admin Demo Access'}</span>
-          </button>
-        </div>
+        {isDemoVisible && (
+          <div className="pt-3 border-t border-[#1e1e1e] text-center">
+            <button
+              type="button"
+              onClick={() => {
+                navigate(location.pathname + location.search, { replace: true });
+                setHasAdminHash(false);
+              }}
+              className="text-[11px] text-[#555555] hover:text-[#A3A3A3] transition-colors inline-flex items-center gap-1 cursor-pointer"
+            >
+              <ShieldCheck className="w-3.5 h-3.5" />
+              <span>Exit Admin Mode (#admin)</span>
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Forgot / Reset Password Modal */}
