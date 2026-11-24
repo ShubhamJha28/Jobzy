@@ -1,4 +1,9 @@
-const rawBase = (import.meta as any).env?.VITE_API_URL || '/api';
+const PRODUCTION_BACKEND_URL = 'https://jobzy.onrender.com';
+
+const rawBase =
+  (import.meta as any).env?.VITE_API_URL ||
+  ((import.meta as any).env?.PROD ? `${PRODUCTION_BACKEND_URL}/api` : '/api');
+
 const API_BASE_URL = rawBase.endsWith('/') ? rawBase.slice(0, -1) : rawBase;
 
 interface RequestOptions extends RequestInit {
