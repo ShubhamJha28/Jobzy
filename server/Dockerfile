@@ -12,7 +12,7 @@ RUN npm run build
 
 FROM node:22-alpine AS runner
 
-RUN apk add --no-cache openssl libc6-compat
+RUN apk add --no-cache openssl libc6-compat && mkdir -p /uploads/resumes /app/uploads/resumes
 
 WORKDIR /app
 COPY package*.json ./
@@ -23,4 +23,4 @@ COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
 COPY --from=builder /app/prisma ./prisma
 
 EXPOSE 5001
-CMD ["npm", "start"]
+CMD ["node", "dist/index.js"]
