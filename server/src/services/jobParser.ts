@@ -14,11 +14,15 @@ export interface ParsedJobDescription {
 }
 
 const COMMON_SKILLS = [
-  'React.js', 'TypeScript', 'JavaScript', 'Node.js', 'Python', 'PostgreSQL',
+  'React.js', 'React', 'TypeScript', 'JavaScript', 'Node.js', 'Python', 'PostgreSQL',
   'MongoDB', 'Redis', 'REST APIs', 'GraphQL', 'Prisma ORM', 'Docker',
-  'Kubernetes', 'AWS', 'CI/CD Pipelines', 'Tailwind CSS', 'Next.js',
-  'Machine Learning', 'LLM & Generative AI', 'Vector Databases',
-  'System Design', 'Technical Leadership', 'Agile / Scrum', 'Go (Golang)'
+  'Kubernetes', 'AWS', 'GCP', 'Azure', 'CI/CD Pipelines', 'Tailwind CSS', 'Next.js',
+  'Vue.js', 'Angular', 'Express.js', 'Django', 'Flask', 'FastAPI', 'Spring Boot',
+  'Java', 'C++', 'C#', '.NET', 'Go (Golang)', 'Golang', 'Rust', 'PHP', 'Ruby on Rails',
+  'MySQL', 'Elasticsearch', 'Microservices', 'System Design', 'Git', 'Linux',
+  'Machine Learning', 'LLM & Generative AI', 'Vector Databases', 'Technical Leadership',
+  'Agile / Scrum', 'Problem Solving', 'Data Structures', 'Algorithms', 'WebSockets',
+  'Terraform', 'Kafka', 'Flutter', 'Swift', 'Kotlin'
 ];
 
 export class JobParserService {

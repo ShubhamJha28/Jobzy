@@ -18,28 +18,27 @@ export class MatchingController {
         return;
       }
 
-      if (!jobId && (!customJdText || customJdText.trim().length < 10)) {
-        res.status(400).json({
-          success: false,
-          message: 'Please provide either a valid target jobId or paste a custom job description.',
-        });
-        return;
-      }
-
-      const profile = await prisma.candidateProfile.findUnique({
+      // Auto-find or create candidate profile
+      let profile = await prisma.candidateProfile.findUnique({
         where: { userId: req.user.id },
       });
 
       if (!profile) {
-        res.status(404).json({ success: false, message: 'Candidate profile not found.' });
-        return;
+        profile = await prisma.candidateProfile.create({
+          data: {
+            userId: req.user.id,
+            title: 'Software Engineer',
+            experienceYears: 1.0,
+          },
+        });
       }
 
       // Find target resume
       let resume = null;
       if (resumeId) {
         resume = await prisma.resume.findUnique({ where: { id: resumeId } });
-      } else {
+      }
+      if (!resume) {
         resume = await prisma.resume.findFirst({
           where: { candidateId: profile.id },
           orderBy: { createdAt: 'desc' },
@@ -47,43 +46,70 @@ export class MatchingController {
       }
 
       if (!resume || !resume.parsedData) {
-        res.status(400).json({ success: false, message: 'No parsed resume found. Please upload a resume first.' });
+        res.status(400).json({
+          success: false,
+          message: 'No parsed resume found. Please upload a resume first to run compatibility analysis.',
+        });
         return;
       }
 
       let jobRequirements: any = null;
       let targetJob: any = null;
-      let targetJobTitle = 'Custom Job Description';
+      let targetJobTitle = 'Universal Software Engineer';
+      let isCustom = true;
 
-      if (customJdText && customJdText.trim().length >= 10) {
-        const parsedJD = JobParserService.parseJobDescription(customJdText.trim());
-        targetJobTitle = parsedJD.title || 'Custom Job Opening';
-        jobRequirements = {
-          requiredSkills: parsedJD.requiredSkills.length > 0 ? parsedJD.requiredSkills : ['TypeScript', 'JavaScript', 'Problem Solving'],
-          preferredSkills: parsedJD.preferredSkills || [],
-          minimumExperience: parsedJD.minimumExperience || 1.0,
-          weightsConfig: null,
-          title: targetJobTitle,
-        };
-      } else if (jobId) {
-        targetJob = await prisma.job.findUnique({
-          where: { id: jobId },
-          include: { company: true },
-        });
+      // 1. If jobId is provided, check if valid platform job
+      if (jobId && typeof jobId === 'string' && jobId !== 'custom' && jobId !== 'universal') {
+        try {
+          targetJob = await prisma.job.findUnique({
+            where: { id: jobId },
+            include: { company: true },
+          });
 
-        if (!targetJob) {
-          res.status(404).json({ success: false, message: 'Job not found.' });
-          return;
+          if (targetJob) {
+            isCustom = false;
+            targetJobTitle = targetJob.title;
+            jobRequirements = {
+              requiredSkills: targetJob.requiredSkills ? JSON.parse(targetJob.requiredSkills) : [],
+              preferredSkills: targetJob.preferredSkills ? JSON.parse(targetJob.preferredSkills) : [],
+              minimumExperience: targetJob.minimumExperience,
+              weightsConfig: targetJob.weightsConfig,
+              title: targetJob.title,
+            };
+          }
+        } catch (e) {
+          // If invalid MongoDB ObjectId format or job not found, fall through to universal/custom
+          targetJob = null;
         }
+      }
 
-        targetJobTitle = targetJob.title;
-        jobRequirements = {
-          requiredSkills: targetJob.requiredSkills ? JSON.parse(targetJob.requiredSkills) : [],
-          preferredSkills: targetJob.preferredSkills ? JSON.parse(targetJob.preferredSkills) : [],
-          minimumExperience: targetJob.minimumExperience,
-          weightsConfig: targetJob.weightsConfig,
-          title: targetJob.title,
-        };
+      // 2. If no platform job was matched, evaluate custom JD text or universal baseline
+      if (!jobRequirements) {
+        const rawJd = (customJdText && typeof customJdText === 'string') ? customJdText.trim() : '';
+
+        if (rawJd.length >= 5) {
+          const parsedJD = JobParserService.parseJobDescription(rawJd);
+          targetJobTitle = parsedJD.title || 'Target Job Position';
+          jobRequirements = {
+            requiredSkills: parsedJD.requiredSkills.length > 0
+              ? parsedJD.requiredSkills
+              : ['Problem Solving', 'Software Engineering', 'Technical Architecture', 'Git'],
+            preferredSkills: parsedJD.preferredSkills || [],
+            minimumExperience: parsedJD.minimumExperience || 1.0,
+            weightsConfig: null,
+            title: targetJobTitle,
+          };
+        } else {
+          // Universal Software Engineering standard requirements if field was left blank
+          targetJobTitle = 'Full Stack Software Engineer (Industry Baseline)';
+          jobRequirements = {
+            requiredSkills: ['JavaScript', 'TypeScript', 'React.js', 'Node.js', 'REST APIs', 'Git', 'Problem Solving'],
+            preferredSkills: ['Docker', 'PostgreSQL', 'MongoDB', 'CI/CD Pipelines'],
+            minimumExperience: 1.0,
+            weightsConfig: null,
+            title: targetJobTitle,
+          };
+        }
       }
 
       const parsedResume = JSON.parse(resume.parsedData);

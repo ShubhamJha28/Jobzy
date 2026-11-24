@@ -5,6 +5,7 @@ import { JobzyCard } from '../../components/JobzyCard';
 import { JobzyButton } from '../../components/JobzyButton';
 import { MatchScoreCard } from '../../components/MatchScoreCard';
 import { SkillBadge } from '../../components/SkillBadge';
+import { ResumeUploadZone } from '../../components/ResumeUploadZone';
 import { LoadingIndicator } from '../../components/LoadingIndicator';
 import {
   Sparkles,
@@ -16,6 +17,9 @@ import {
   Target,
   Briefcase,
   Layers,
+  UploadCloud,
+  FileText,
+  Globe,
 } from 'lucide-react';
 
 export const ResumeAnalyzer: React.FC = () => {
@@ -32,44 +36,69 @@ export const ResumeAnalyzer: React.FC = () => {
 
   const [isLoading, setIsLoading] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [isUploadingResume, setIsUploadingResume] = useState(false);
   const [analysisResult, setAnalysisResult] = useState<any | null>(null);
 
   useEffect(() => {
     loadPrerequisites();
   }, []);
 
-  const SAMPLE_JOB_DESCRIPTION = `Role: Senior Full Stack Engineer (React, Node.js & Cloud)
-Company: Stripe / Cloudflare
-Location: Remote (US / Global)
-Experience Required: 4+ years of professional full-stack software development
+  const SAMPLE_FULLSTACK_JD = `Role: Senior Full Stack Engineer (React, Node.js & Cloud)
+Company: Tech Enterprise
+Location: Remote (Global)
+Experience: 3+ years of professional software engineering
 
-Key Responsibilities:
-- Design, build, and maintain mission-critical customer-facing web applications.
-- Develop high-throughput RESTful and GraphQL APIs with Node.js, Express, and TypeScript.
-- Architect efficient data models using MongoDB, PostgreSQL, and Prisma ORM.
-- Implement responsive, accessible, high-performance UI components with React.js and Tailwind CSS.
-- Build and operate CI/CD pipelines with Docker, GitHub Actions, and cloud infrastructure (AWS/GCP).
+Responsibilities:
+- Build, test, and ship high-throughput web applications and REST APIs.
+- Work with React.js, TypeScript, Node.js, and modern CSS frameworks.
+- Design database schemas and optimize queries with MongoDB / PostgreSQL.
+- Maintain CI/CD automated deployment pipelines and Docker containers.
 
-Required Qualifications:
-- 4+ years of hands-on experience with TypeScript, React.js, and Node.js.
-- Strong proficiency in API design, microservices, and database query optimization (MongoDB or PostgreSQL).
-- Experience with automated testing, state management, and Git workflows.
-- Excellent communication and technical problem-solving capabilities.
+Requirements:
+- Strong proficiency in TypeScript, JavaScript, React.js, and Node.js.
+- Solid understanding of REST APIs, database systems, and state management.
+- Hands-on experience with Git version control and automated unit testing.
+- Strong analytical and problem-solving skills.
 
-Preferred Qualifications:
-- Experience with Redis caching, message queues (BullMQ/RabbitMQ), and distributed systems.
-- Familiarity with AI/LLM APIs, vector embeddings, and real-time WebSockets.`;
+Preferred:
+- Experience with Docker, Redis caching, and cloud deployments (AWS/GCP).`;
 
-  const handleLoadSampleJd = () => {
-    setCustomJdText(SAMPLE_JOB_DESCRIPTION);
-  };
+  const SAMPLE_FRONTEND_JD = `Role: Frontend Engineer (React & TypeScript)
+Company: Creative Studio
+Location: Remote
+Experience: 2+ years of frontend development
+
+Responsibilities:
+- Build beautiful, performant, responsive web interfaces using React.js and Tailwind CSS.
+- Collaborate with UX/UI designers in Figma to build accessible components.
+- Optimize frontend bundle size and web performance metrics.
+
+Requirements:
+- Deep expertise in React.js, TypeScript, Next.js, and HTML5/CSS3.
+- Experience with Tailwind CSS, state management, and REST API integration.
+- Eye for design, typography, accessibility (a11y), and responsiveness.`;
+
+  const SAMPLE_BACKEND_JD = `Role: Backend Engineer (Python / Node.js & Distributed Systems)
+Company: Cloud Systems
+Location: Remote
+Experience: 3+ years of backend systems development
+
+Responsibilities:
+- Architect high-performance backend microservices and data pipelines.
+- Manage database design, migrations, and query performance in PostgreSQL and Redis.
+- Secure API endpoints, manage auth tokens, and integrate cloud services.
+
+Requirements:
+- Strong experience with Node.js, Express, or Python (FastAPI / Django).
+- Hands-on database modeling in PostgreSQL or MongoDB.
+- Experience with microservices, Docker, Docker Compose, and RESTful APIs.`;
 
   const loadPrerequisites = async () => {
     try {
       setIsLoading(true);
       const [resumesRes, jobsRes] = await Promise.all([
         apiRequest<{ success: boolean; resumes: any[] }>('/resumes'),
-        apiRequest<{ success: boolean; jobs: any[] }>('/jobs'),
+        apiRequest<{ success: boolean; jobs: any[] }>('/jobs').catch(() => ({ success: true, jobs: [] })),
       ]);
 
       if (resumesRes.success && resumesRes.resumes?.length > 0) {
@@ -88,19 +117,31 @@ Preferred Qualifications:
     }
   };
 
+  const handleQuickUpload = async (file: File) => {
+    try {
+      setIsUploadingResume(true);
+      const formData = new FormData();
+      formData.append('resume', file);
+
+      const res = await apiRequest<{ success: boolean; resume: any }>('/resumes/upload', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (res.success && res.resume) {
+        setResumes((prev) => [res.resume, ...prev]);
+        setSelectedResumeId(res.resume.id);
+      }
+    } catch (err: any) {
+      alert(err.message || 'Failed to upload resume.');
+    } finally {
+      setIsUploadingResume(false);
+    }
+  };
+
   const handleRunAnalysis = async () => {
     if (!selectedResumeId) {
-      alert('Please select or upload a resume first.');
-      return;
-    }
-
-    if (isCustomJd && (!customJdText || customJdText.trim().length < 15)) {
-      alert('Please paste a job description (at least 15 characters) to evaluate against.');
-      return;
-    }
-
-    if (!isCustomJd && !selectedJobId) {
-      alert('Please select a target job from the platform list.');
+      alert('Please upload or select a resume first to run compatibility analysis.');
       return;
     }
 
@@ -111,8 +152,10 @@ Preferred Qualifications:
         method: 'POST',
         body: JSON.stringify({
           resumeId: selectedResumeId,
-          jobId: isCustomJd ? undefined : selectedJobId,
-          customJdText: isCustomJd ? customJdText.trim() : undefined,
+          // Only send jobId if explicitly in platform jobs mode AND a jobId is chosen
+          jobId: !isCustomJd && selectedJobId ? selectedJobId : undefined,
+          // Pass custom text if provided
+          customJdText: customJdText.trim() ? customJdText.trim() : undefined,
         }),
       });
 
@@ -120,7 +163,7 @@ Preferred Qualifications:
         setAnalysisResult(res);
       }
     } catch (err: any) {
-      alert(err.message || 'Analysis failed. Please check the resume and job description.');
+      alert(err.message || 'Analysis failed. Please verify your resume and job description.');
     } finally {
       setIsAnalyzing(false);
     }
@@ -131,10 +174,10 @@ Preferred Qualifications:
       <div>
         <h1 className="text-2xl font-black text-white tracking-tight flex items-center gap-2.5">
           <Sparkles className="w-6 h-6 text-[#C4F167]" />
-          Resume & Job Compatibility Analyzer
+          Universal Resume & Job Description Compatibility Analyzer
         </h1>
         <p className="text-xs text-[#A3A3A3] mt-1">
-          Perform a hybrid deterministic and AI evaluation comparing your resume qualifications against target job requirements.
+          Perform deterministic and AI qualification matching against any job description. No job ID required.
         </p>
       </div>
 
@@ -142,37 +185,55 @@ Preferred Qualifications:
       <JobzyCard className="p-6 border-[#2a2a2a]">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Select Resume */}
-          <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-[#A3A3A3] mb-2">
-              1. Select Resume
-            </label>
-            {resumes.length === 0 ? (
-              <div className="p-4 bg-[#161616] border border-[#2a2a2a] rounded-xl text-xs text-[#888888]">
-                No resumes uploaded yet.{' '}
-                <Link to="/candidate/resumes" className="text-[#C4F167] font-semibold hover:underline">
-                  Upload a resume first →
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-bold uppercase tracking-wider text-[#A3A3A3] flex items-center gap-1.5">
+                <FileText className="w-3.5 h-3.5 text-[#C4F167]" />
+                1. Select Resume
+              </label>
+              {resumes.length > 0 && (
+                <Link to="/candidate/resumes" className="text-[11px] text-[#C4F167] hover:underline">
+                  Manage Resumes →
                 </Link>
+              )}
+            </div>
+
+            {resumes.length === 0 ? (
+              <div className="space-y-3">
+                <div className="p-3 bg-[#161616] border border-[#2a2a2a] rounded-xl text-xs text-[#A3A3A3]">
+                  No resume found. Upload a resume file below to analyze it instantly:
+                </div>
+                <ResumeUploadZone onFileUpload={handleQuickUpload} isLoading={isUploadingResume} />
               </div>
             ) : (
-              <select
-                value={selectedResumeId}
-                onChange={(e) => setSelectedResumeId(e.target.value)}
-                className="w-full bg-[#181818] border border-[#2e2e2e] rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-[#C4F167]"
-              >
-                {resumes.map((r) => (
-                  <option key={r.id} value={r.id}>
-                    {r.originalFileName} (ATS Score: {r.atsScore || 90}%)
-                  </option>
-                ))}
-              </select>
+              <div className="space-y-2">
+                <select
+                  value={selectedResumeId}
+                  onChange={(e) => setSelectedResumeId(e.target.value)}
+                  className="w-full bg-[#181818] border border-[#2e2e2e] rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-[#C4F167]"
+                >
+                  {resumes.map((r) => (
+                    <option key={r.id} value={r.id}>
+                      {r.originalFileName} (ATS Score: {r.atsScore || 90}%)
+                    </option>
+                  ))}
+                </select>
+                <div className="flex items-center justify-between text-[11px] text-[#888888] pt-1">
+                  <span>Selected for AI compatibility parsing</span>
+                  <Link to="/candidate/resumes" className="text-[#C4F167] hover:underline">
+                    Upload another PDF
+                  </Link>
+                </div>
+              </div>
             )}
           </div>
 
-          {/* Select Target Job */}
+          {/* Target Job Requirements */}
           <div>
             <div className="flex items-center justify-between mb-2">
-              <label className="text-xs font-bold uppercase tracking-wider text-[#A3A3A3]">
-                2. Target Job Requirements
+              <label className="text-xs font-bold uppercase tracking-wider text-[#A3A3A3] flex items-center gap-1.5">
+                <Globe className="w-3.5 h-3.5 text-[#C4F167]" />
+                2. Target Job Description
               </label>
               <div className="flex items-center gap-1 bg-[#181818] p-0.5 rounded-lg border border-[#2a2a2a]">
                 <button
@@ -184,7 +245,7 @@ Preferred Qualifications:
                       : 'text-[#888888] hover:text-white'
                   }`}
                 >
-                  Paste Custom JD
+                  Universal (Paste Any JD)
                 </button>
                 <button
                   type="button"
@@ -204,18 +265,18 @@ Preferred Qualifications:
               <div className="space-y-2">
                 <div className="relative">
                   <textarea
-                    rows={6}
+                    rows={7}
                     value={customJdText}
                     onChange={(e) => setCustomJdText(e.target.value)}
-                    placeholder="Paste any job description from LinkedIn, Indeed, or career sites (title, responsibilities, required skills, experience level)..."
+                    placeholder="Paste ANY job description from LinkedIn, Indeed, Glassdoor, company websites, or your notes. (Role title, responsibilities, required skills, experience level)..."
                     className="w-full bg-[#181818] border border-[#2e2e2e] rounded-xl p-3 text-xs text-white placeholder-[#555555] focus:outline-none focus:border-[#C4F167] font-mono leading-relaxed resize-y"
                   />
                 </div>
-                <div className="flex items-center justify-between text-[11px]">
+                <div className="flex flex-wrap items-center justify-between gap-2 text-[11px]">
                   <span className="text-[#666666]">
                     {customJdText.length} characters · ~{customJdText.trim() ? customJdText.trim().split(/\s+/).length : 0} words
                   </span>
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
                     {customJdText && (
                       <button
                         type="button"
@@ -225,33 +286,63 @@ Preferred Qualifications:
                         Clear
                       </button>
                     )}
+                    <span className="text-[#555555]">Presets:</span>
                     <button
                       type="button"
-                      onClick={handleLoadSampleJd}
+                      onClick={() => setCustomJdText(SAMPLE_FULLSTACK_JD)}
                       className="text-[#C4F167] hover:underline cursor-pointer font-medium"
                     >
-                      Paste Sample Full-Stack JD
+                      Full-Stack
+                    </button>
+                    <span className="text-[#333333]">·</span>
+                    <button
+                      type="button"
+                      onClick={() => setCustomJdText(SAMPLE_FRONTEND_JD)}
+                      className="text-[#C4F167] hover:underline cursor-pointer font-medium"
+                    >
+                      Frontend
+                    </button>
+                    <span className="text-[#333333]">·</span>
+                    <button
+                      type="button"
+                      onClick={() => setCustomJdText(SAMPLE_BACKEND_JD)}
+                      className="text-[#C4F167] hover:underline cursor-pointer font-medium"
+                    >
+                      Backend
                     </button>
                   </div>
                 </div>
               </div>
             ) : (
-              <select
-                value={selectedJobId}
-                onChange={(e) => setSelectedJobId(e.target.value)}
-                className="w-full bg-[#181818] border border-[#2e2e2e] rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-[#C4F167]"
-              >
-                {jobs.map((j) => (
-                  <option key={j.id} value={j.id}>
-                    {j.title} — {j.company?.name || 'Tech Company'} ({j.location})
-                  </option>
-                ))}
-              </select>
+              <div className="space-y-2">
+                <select
+                  value={selectedJobId}
+                  onChange={(e) => setSelectedJobId(e.target.value)}
+                  className="w-full bg-[#181818] border border-[#2e2e2e] rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-[#C4F167]"
+                >
+                  {jobs.length === 0 ? (
+                    <option value="">No platform jobs found (switch to Universal Paste JD)</option>
+                  ) : (
+                    jobs.map((j) => (
+                      <option key={j.id} value={j.id}>
+                        {j.title} — {j.company?.name || 'Tech Company'} ({j.location})
+                      </option>
+                    ))
+                  )}
+                </select>
+                <p className="text-[11px] text-[#888888]">
+                  Select from live openings on Jobzy, or switch to Universal to paste any external JD.
+                </p>
+              </div>
             )}
           </div>
         </div>
 
-        <div className="mt-6 pt-5 border-t border-[#222222] flex justify-end">
+        <div className="mt-6 pt-5 border-t border-[#222222] flex flex-col sm:flex-row items-center justify-between gap-3">
+          <div className="text-xs text-[#888888] flex items-center gap-1.5">
+            <CheckCircle2 className="w-3.5 h-3.5 text-[#C4F167]" />
+            <span>Universal AI Matching: No target job ID required.</span>
+          </div>
           <JobzyButton
             size="md"
             variant="primary"
@@ -259,7 +350,7 @@ Preferred Qualifications:
             leftIcon={<Sparkles className="w-4 h-4" />}
             onClick={handleRunAnalysis}
           >
-            Run Compatibility Evaluation
+            Run Universal Compatibility Evaluation
           </JobzyButton>
         </div>
       </JobzyCard>
