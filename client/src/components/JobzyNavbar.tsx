@@ -6,8 +6,6 @@ import { useTheme } from '../context/ThemeContext';
 import { apiRequest } from '../api/client';
 import {
   Bell,
-  Sun,
-  Moon,
   LogOut,
   Briefcase,
   Layers,
@@ -20,7 +18,7 @@ import { LiquidNavbar, NimbusIcons, LiquidNavItem } from './ui/liquid-glass-navb
 
 export const JobzyNavbar: React.FC = () => {
   const { user, logout } = useAuth();
-  const { theme, toggleTheme } = useTheme();
+  const { theme } = useTheme();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -287,28 +285,6 @@ export const JobzyNavbar: React.FC = () => {
           }
           rightContent={
             <div className="flex items-center gap-2 sm:gap-3 pr-1" onClick={(e) => e.stopPropagation()}>
-              {/* Theme Toggle Button */}
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  toggleTheme();
-                }}
-                className={`p-2 rounded-xl border transition-all cursor-pointer relative z-20 ${
-                  isDark
-                    ? 'text-[#A3A3A3] hover:text-[#C4F167] hover:bg-[#161616]/60 border-transparent hover:border-[#C4F167]/30'
-                    : 'text-[#475569] hover:text-[#0F172A] hover:bg-black/5 border-transparent hover:border-black/10'
-                }`}
-                title={isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
-                aria-label="Toggle Theme"
-              >
-                {isDark ? (
-                  <Sun className="w-4 h-4 text-[#C4F167]" />
-                ) : (
-                  <Moon className="w-4 h-4 text-[#0F172A]" />
-                )}
-              </button>
-
               {!user ? (
                 <div className="flex items-center gap-2 relative z-20">
                   <Link
