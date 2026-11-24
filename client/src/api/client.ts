@@ -1,4 +1,5 @@
-const API_BASE_URL = (import.meta as any).env?.VITE_API_URL || '/api';
+const rawBase = (import.meta as any).env?.VITE_API_URL || '/api';
+const API_BASE_URL = rawBase.endsWith('/') ? rawBase.slice(0, -1) : rawBase;
 
 interface RequestOptions extends RequestInit {
   params?: Record<string, any>;
@@ -7,7 +8,8 @@ interface RequestOptions extends RequestInit {
 export async function apiRequest<T = any>(endpoint: string, options: RequestOptions = {}): Promise<T> {
   const { params, headers = {}, ...rest } = options;
 
-  let url = `${API_BASE_URL}${endpoint.startsWith('/') ? endpoint : `/${endpoint}`}`;
+  const cleanEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
+  let url = `${API_BASE_URL}${cleanEndpoint}`;
   if (params) {
     const query = new URLSearchParams();
     Object.entries(params).forEach(([key, value]) => {
@@ -40,7 +42,11 @@ export async function apiRequest<T = any>(endpoint: string, options: RequestOpti
     headers: requestHeaders,
   });
 
-  const data = await response.json().catch(() => ({}));
+  let data: any = {};
+  const contentType = response.headers.get('content-type') || '';
+  if (contentType.includes('application/json')) {
+    data = await response.json().catch(() => ({}));
+  }
 
   if (!response.ok) {
     if (response.status === 401) {
@@ -51,7 +57,12 @@ export async function apiRequest<T = any>(endpoint: string, options: RequestOpti
         window.location.href = '/login?expired=true';
       }
     }
-    throw new Error(data.message || `Request failed with status ${response.status}`);
+    const errMsg =
+      data.message ||
+      (response.status === 404
+        ? 'Backend API not found (404). Please ensure VITE_API_URL is configured in your Vercel settings.'
+        : `Request failed with status ${response.status}`);
+    throw new Error(errMsg);
   }
 
   return data as T;
