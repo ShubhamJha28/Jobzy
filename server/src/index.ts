@@ -10,10 +10,12 @@ const app = express();
 const PORT = process.env.PORT || 5001;
 
 // CORS
-const clientUrl = process.env.CLIENT_URL || 'http://localhost:5173';
 app.use(
   cors({
-    origin: [clientUrl, 'http://localhost:5173', 'http://127.0.0.1:5173'],
+    origin: (origin, callback) => {
+      // Allow all origins (requests with no origin like mobile/curl, or any web client)
+      callback(null, true);
+    },
     credentials: true,
   })
 );

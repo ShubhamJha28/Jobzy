@@ -1,4 +1,4 @@
-const API_BASE_URL = '/api';
+const API_BASE_URL = (import.meta as any).env?.VITE_API_URL || '/api';
 
 interface RequestOptions extends RequestInit {
   params?: Record<string, any>;

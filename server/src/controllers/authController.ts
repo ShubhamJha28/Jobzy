@@ -31,9 +31,13 @@ export class AuthController {
         return;
       }
 
-      const existingUser = await prisma.user.findUnique({ where: { email } });
+      const normalizedEmail = email.trim().toLowerCase();
+
+      const existingUser = await prisma.user.findFirst({
+        where: { email: { equals: normalizedEmail, mode: 'insensitive' } },
+      });
       if (existingUser) {
-        res.status(409).json({ success: false, message: 'An account with this email already exists.' });
+        res.status(409).json({ success: false, message: 'An account with this email already exists. Please sign in instead.' });
         return;
       }
 
@@ -43,11 +47,11 @@ export class AuthController {
       const passwordHash = await bcrypt.hash(password, 10);
       const user = await prisma.user.create({
         data: {
-          email,
-          name,
+          email: normalizedEmail,
+          name: name.trim(),
           passwordHash,
           role: userRole,
-          avatar: `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(name)}&backgroundColor=111111&textColor=c4f167`,
+          avatar: `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(name.trim())}&backgroundColor=111111&textColor=c4f167`,
         },
       });
 
@@ -120,8 +124,10 @@ export class AuthController {
         return;
       }
 
-      const user = await prisma.user.findUnique({
-        where: { email },
+      const normalizedEmail = email.trim().toLowerCase();
+
+      const user = await prisma.user.findFirst({
+        where: { email: { equals: normalizedEmail, mode: 'insensitive' } },
         include: {
           candidateProfile: true,
           recruiterProfile: {
@@ -139,19 +145,6 @@ export class AuthController {
       if (!isMatch) {
         res.status(401).json({ success: false, message: 'Invalid email or password.' });
         return;
-      }
-
-      // Role differentiation check
-      if (role && user.role !== 'ADMIN') {
-        const expectedRole = (role as string).toUpperCase();
-        if (user.role !== expectedRole) {
-          const actualRoleLabel = user.role === 'RECRUITER' ? 'Recruiter' : 'Candidate';
-          res.status(403).json({
-            success: false,
-            message: `This account is registered as a ${actualRoleLabel}. Please switch to ${actualRoleLabel} Login.`,
-          });
-          return;
-        }
       }
 
       const token = signToken({ id: user.id, email: user.email, role: user.role, name: user.name });
