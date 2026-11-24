@@ -24,6 +24,12 @@ app.use(
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
+// Request logger
+app.use((req: Request, _res: Response, next: NextFunction) => {
+  console.log(`👉 [${new Date().toLocaleTimeString()}] ${req.method} ${req.originalUrl}`);
+  next();
+});
+
 // Static file serving for uploads
 const uploadsDir = path.join(process.cwd(), '..', 'uploads');
 app.use('/uploads', express.static(uploadsDir));
@@ -46,8 +52,9 @@ app.get('/api/health', (_req: Request, res: Response) => {
   });
 });
 
-// Mount Master REST API
+// Mount Master REST API (supports both with and without /api prefix)
 app.use('/api', apiRouter);
+app.use(apiRouter);
 
 // Global Error Handler
 app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
@@ -58,10 +65,10 @@ app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
   });
 });
 
-const server = app.listen(Number(PORT), '0.0.0.0', () => {
+const server = app.listen(Number(PORT), () => {
   console.log(`=================================================`);
   console.log(`🚀 JOBZY Backend API Server running on port ${PORT}`);
-  console.log(`🔗 Health check: http://0.0.0.0:${PORT}/api/health`);
+  console.log(`🔗 Health check: http://localhost:${PORT}/api/health`);
   console.log(`=================================================`);
 });
 
