@@ -35,7 +35,7 @@ router.delete('/resumes/:id', authenticateToken, ResumeController.deleteResume);
 // ==================== JOBS ====================
 router.get('/jobs', JobController.getJobs);
 router.get('/jobs/:id', JobController.getJobById);
-router.post('/jobs/parse-jd', authenticateToken, requireRole(['RECRUITER', 'ADMIN']), JobController.parseJobDescription);
+router.post('/jobs/parse-jd', authenticateToken, JobController.parseJobDescription);
 router.post('/jobs', authenticateToken, requireRole(['RECRUITER', 'ADMIN']), JobController.createJob);
 router.put('/jobs/:id', authenticateToken, requireRole(['RECRUITER', 'ADMIN']), JobController.updateJob);
 router.delete('/jobs/:id', authenticateToken, requireRole(['RECRUITER', 'ADMIN']), JobController.deleteJob);

@@ -28,7 +28,7 @@ export const ResumeAnalyzer: React.FC = () => {
   const [selectedResumeId, setSelectedResumeId] = useState<string>(preselectedResumeId || '');
   const [selectedJobId, setSelectedJobId] = useState<string>(preselectedJobId || '');
   const [customJdText, setCustomJdText] = useState('');
-  const [isCustomJd, setIsCustomJd] = useState(false);
+  const [isCustomJd, setIsCustomJd] = useState(!preselectedJobId);
 
   const [isLoading, setIsLoading] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -37,6 +37,32 @@ export const ResumeAnalyzer: React.FC = () => {
   useEffect(() => {
     loadPrerequisites();
   }, []);
+
+  const SAMPLE_JOB_DESCRIPTION = `Role: Senior Full Stack Engineer (React, Node.js & Cloud)
+Company: Stripe / Cloudflare
+Location: Remote (US / Global)
+Experience Required: 4+ years of professional full-stack software development
+
+Key Responsibilities:
+- Design, build, and maintain mission-critical customer-facing web applications.
+- Develop high-throughput RESTful and GraphQL APIs with Node.js, Express, and TypeScript.
+- Architect efficient data models using MongoDB, PostgreSQL, and Prisma ORM.
+- Implement responsive, accessible, high-performance UI components with React.js and Tailwind CSS.
+- Build and operate CI/CD pipelines with Docker, GitHub Actions, and cloud infrastructure (AWS/GCP).
+
+Required Qualifications:
+- 4+ years of hands-on experience with TypeScript, React.js, and Node.js.
+- Strong proficiency in API design, microservices, and database query optimization (MongoDB or PostgreSQL).
+- Experience with automated testing, state management, and Git workflows.
+- Excellent communication and technical problem-solving capabilities.
+
+Preferred Qualifications:
+- Experience with Redis caching, message queues (BullMQ/RabbitMQ), and distributed systems.
+- Familiarity with AI/LLM APIs, vector embeddings, and real-time WebSockets.`;
+
+  const handleLoadSampleJd = () => {
+    setCustomJdText(SAMPLE_JOB_DESCRIPTION);
+  };
 
   const loadPrerequisites = async () => {
     try {
@@ -68,34 +94,25 @@ export const ResumeAnalyzer: React.FC = () => {
       return;
     }
 
+    if (isCustomJd && (!customJdText || customJdText.trim().length < 15)) {
+      alert('Please paste a job description (at least 15 characters) to evaluate against.');
+      return;
+    }
+
+    if (!isCustomJd && !selectedJobId) {
+      alert('Please select a target job from the platform list.');
+      return;
+    }
+
     try {
       setIsAnalyzing(true);
-      let targetJobIdToAnalyze = selectedJobId;
-
-      // If user pasted a custom JD text, first parse and create a temporary opening
-      if (isCustomJd && customJdText) {
-        const parseRes = await apiRequest<{ success: boolean; parsed: any }>('/jobs/parse-jd', {
-          method: 'POST',
-          body: JSON.stringify({ text: customJdText }),
-        });
-        if (parseRes.success) {
-          // create a draft job to match against
-          const createRes = await apiRequest<{ success: boolean; job: any }>('/jobs', {
-            method: 'POST',
-            body: JSON.stringify({
-              ...parseRes.parsed,
-              description: customJdText,
-            }),
-          });
-          targetJobIdToAnalyze = createRes.job.id;
-        }
-      }
 
       const res = await apiRequest<any>('/matching/analyze', {
         method: 'POST',
         body: JSON.stringify({
           resumeId: selectedResumeId,
-          jobId: targetJobIdToAnalyze,
+          jobId: isCustomJd ? undefined : selectedJobId,
+          customJdText: isCustomJd ? customJdText.trim() : undefined,
         }),
       });
 
@@ -103,7 +120,7 @@ export const ResumeAnalyzer: React.FC = () => {
         setAnalysisResult(res);
       }
     } catch (err: any) {
-      alert(err.message || 'Analysis failed. Please ensure a valid resume and job are selected.');
+      alert(err.message || 'Analysis failed. Please check the resume and job description.');
     } finally {
       setIsAnalyzing(false);
     }
@@ -155,25 +172,69 @@ export const ResumeAnalyzer: React.FC = () => {
           <div>
             <div className="flex items-center justify-between mb-2">
               <label className="text-xs font-bold uppercase tracking-wider text-[#A3A3A3]">
-                2. Target Job Description
+                2. Target Job Requirements
               </label>
-              <button
-                type="button"
-                onClick={() => setIsCustomJd(!isCustomJd)}
-                className="text-[11px] text-[#C4F167] hover:underline cursor-pointer"
-              >
-                {isCustomJd ? 'Choose Existing Job Openings' : 'Paste Custom Job Description'}
-              </button>
+              <div className="flex items-center gap-1 bg-[#181818] p-0.5 rounded-lg border border-[#2a2a2a]">
+                <button
+                  type="button"
+                  onClick={() => setIsCustomJd(true)}
+                  className={`px-2.5 py-1 text-[11px] font-bold rounded-md transition-all cursor-pointer ${
+                    isCustomJd
+                      ? 'bg-[#C4F167] text-black shadow-sm'
+                      : 'text-[#888888] hover:text-white'
+                  }`}
+                >
+                  Paste Custom JD
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIsCustomJd(false)}
+                  className={`px-2.5 py-1 text-[11px] font-bold rounded-md transition-all cursor-pointer ${
+                    !isCustomJd
+                      ? 'bg-[#C4F167] text-black shadow-sm'
+                      : 'text-[#888888] hover:text-white'
+                  }`}
+                >
+                  Platform Jobs
+                </button>
+              </div>
             </div>
 
             {isCustomJd ? (
-              <textarea
-                rows={4}
-                value={customJdText}
-                onChange={(e) => setCustomJdText(e.target.value)}
-                placeholder="Paste any job description text here (requirements, responsibilities, years of experience)..."
-                className="w-full bg-[#181818] border border-[#2e2e2e] rounded-xl p-3 text-xs text-white placeholder-[#555555] focus:outline-none focus:border-[#C4F167]"
-              />
+              <div className="space-y-2">
+                <div className="relative">
+                  <textarea
+                    rows={6}
+                    value={customJdText}
+                    onChange={(e) => setCustomJdText(e.target.value)}
+                    placeholder="Paste any job description from LinkedIn, Indeed, or career sites (title, responsibilities, required skills, experience level)..."
+                    className="w-full bg-[#181818] border border-[#2e2e2e] rounded-xl p-3 text-xs text-white placeholder-[#555555] focus:outline-none focus:border-[#C4F167] font-mono leading-relaxed resize-y"
+                  />
+                </div>
+                <div className="flex items-center justify-between text-[11px]">
+                  <span className="text-[#666666]">
+                    {customJdText.length} characters · ~{customJdText.trim() ? customJdText.trim().split(/\s+/).length : 0} words
+                  </span>
+                  <div className="flex items-center gap-2">
+                    {customJdText && (
+                      <button
+                        type="button"
+                        onClick={() => setCustomJdText('')}
+                        className="text-[#888888] hover:text-red-400 transition-colors cursor-pointer"
+                      >
+                        Clear
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      onClick={handleLoadSampleJd}
+                      className="text-[#C4F167] hover:underline cursor-pointer font-medium"
+                    >
+                      Paste Sample Full-Stack JD
+                    </button>
+                  </div>
+                </div>
+              </div>
             ) : (
               <select
                 value={selectedJobId}
@@ -206,6 +267,35 @@ export const ResumeAnalyzer: React.FC = () => {
       {/* Results View */}
       {analysisResult && (
         <div className="space-y-6">
+          {/* Target Position Info Banner */}
+          <div className="p-4 bg-[#141414] border border-[#2a2a2a] rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 rounded-xl bg-[#C4F167]/10 text-[#C4F167] shrink-0">
+                <Briefcase className="w-5 h-5" />
+              </div>
+              <div>
+                <span className="text-[11px] font-mono text-[#888888] uppercase tracking-wider block">
+                  {analysisResult.job?.isCustom ? 'Custom Pasted Job Description' : 'Platform Job Opening'}
+                </span>
+                <h3 className="text-base font-bold text-white">
+                  {analysisResult.job?.title || 'Target Job Position'}
+                  {analysisResult.job?.company && (
+                    <span className="text-[#A3A3A3] font-normal text-xs sm:text-sm"> · {analysisResult.job.company}</span>
+                  )}
+                </h3>
+              </div>
+            </div>
+            {analysisResult.job?.isCustom ? (
+              <span className="self-start sm:self-auto text-xs font-semibold px-3 py-1 rounded-full bg-[#C4F167]/15 text-[#C4F167] border border-[#C4F167]/30">
+                Custom JD Evaluated
+              </span>
+            ) : (
+              <span className="self-start sm:self-auto text-xs font-semibold px-3 py-1 rounded-full bg-blue-500/15 text-blue-400 border border-blue-500/30">
+                Platform Job Match
+              </span>
+            )}
+          </div>
+
           {/* Main Compatibility & Breakdown Card */}
           <MatchScoreCard
             overallScore={analysisResult.overallScore}

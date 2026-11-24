@@ -2,23 +2,27 @@ import { Response } from 'express';
 import { AuthenticatedRequest } from '../middleware/auth';
 import { MatchingEngineService } from '../services/matchingEngine';
 import { AIService } from '../services/aiService';
+import { JobParserService } from '../services/jobParser';
 import prisma from '../config/prisma';
 
 export class MatchingController {
   /**
-   * Run job compatibility and skill gap analysis for a candidate resume against a target job
+   * Run job compatibility and skill gap analysis for a candidate resume against a target job or custom pasted JD
    */
   public static async analyzeCandidateVsJob(req: AuthenticatedRequest, res: Response): Promise<void> {
     try {
-      const { resumeId, jobId } = req.body;
+      const { resumeId, jobId, customJdText } = req.body;
 
       if (!req.user) {
         res.status(401).json({ success: false, message: 'Unauthorized' });
         return;
       }
 
-      if (!jobId) {
-        res.status(400).json({ success: false, message: 'target jobId is required for analysis.' });
+      if (!jobId && (!customJdText || customJdText.trim().length < 10)) {
+        res.status(400).json({
+          success: false,
+          message: 'Please provide either a valid target jobId or paste a custom job description.',
+        });
         return;
       }
 
@@ -47,25 +51,42 @@ export class MatchingController {
         return;
       }
 
-      const job = await prisma.job.findUnique({
-        where: { id: jobId },
-        include: { company: true },
-      });
+      let jobRequirements: any = null;
+      let targetJob: any = null;
+      let targetJobTitle = 'Custom Job Description';
 
-      if (!job) {
-        res.status(404).json({ success: false, message: 'Job not found.' });
-        return;
+      if (customJdText && customJdText.trim().length >= 10) {
+        const parsedJD = JobParserService.parseJobDescription(customJdText.trim());
+        targetJobTitle = parsedJD.title || 'Custom Job Opening';
+        jobRequirements = {
+          requiredSkills: parsedJD.requiredSkills.length > 0 ? parsedJD.requiredSkills : ['TypeScript', 'JavaScript', 'Problem Solving'],
+          preferredSkills: parsedJD.preferredSkills || [],
+          minimumExperience: parsedJD.minimumExperience || 1.0,
+          weightsConfig: null,
+          title: targetJobTitle,
+        };
+      } else if (jobId) {
+        targetJob = await prisma.job.findUnique({
+          where: { id: jobId },
+          include: { company: true },
+        });
+
+        if (!targetJob) {
+          res.status(404).json({ success: false, message: 'Job not found.' });
+          return;
+        }
+
+        targetJobTitle = targetJob.title;
+        jobRequirements = {
+          requiredSkills: targetJob.requiredSkills ? JSON.parse(targetJob.requiredSkills) : [],
+          preferredSkills: targetJob.preferredSkills ? JSON.parse(targetJob.preferredSkills) : [],
+          minimumExperience: targetJob.minimumExperience,
+          weightsConfig: targetJob.weightsConfig,
+          title: targetJob.title,
+        };
       }
 
       const parsedResume = JSON.parse(resume.parsedData);
-      const jobRequirements = {
-        requiredSkills: job.requiredSkills ? JSON.parse(job.requiredSkills) : [],
-        preferredSkills: job.preferredSkills ? JSON.parse(job.preferredSkills) : [],
-        minimumExperience: job.minimumExperience,
-        weightsConfig: job.weightsConfig,
-        title: job.title,
-      };
-
       const matchResult = MatchingEngineService.evaluateMatch(parsedResume, jobRequirements);
       const learningRoadmap = AIService.generateLearningRoadmap(matchResult.missingMandatorySkills);
 
@@ -74,7 +95,7 @@ export class MatchingController {
         data: {
           candidateId: profile.id,
           resumeId: resume.id,
-          jobId: job.id,
+          jobId: targetJob ? targetJob.id : null,
           overallScore: matchResult.overallScore,
           atsReadabilityScore: resume.atsScore || 90,
           matchScore: matchResult.overallScore,
@@ -88,43 +109,47 @@ export class MatchingController {
             categoryScores: matchResult.categoryScores,
             evidence: matchResult.evidence,
             learningRoadmap,
+            jobTitle: targetJobTitle,
+            isCustomJd: !targetJob,
           }),
           recommendations: JSON.stringify(matchResult.evidence.gaps),
           formattingWarnings: JSON.stringify(parsedResume.atsWarnings || []),
         },
       });
 
-      // Upsert candidate match
-      await prisma.candidateMatch.upsert({
-        where: {
-          candidateId_jobId: {
-            candidateId: profile.id,
-            jobId: job.id,
+      // Upsert candidate match only for platform jobs
+      if (targetJob) {
+        await prisma.candidateMatch.upsert({
+          where: {
+            candidateId_jobId: {
+              candidateId: profile.id,
+              jobId: targetJob.id,
+            },
           },
-        },
-        update: {
-          overallScore: matchResult.overallScore,
-          skillScore: matchResult.categoryScores.requiredSkills,
-          experienceScore: matchResult.categoryScores.experience,
-          projectScore: matchResult.categoryScores.projects,
-          educationScore: matchResult.categoryScores.education,
-          evidence: JSON.stringify(matchResult.evidence),
-          missingRequirements: JSON.stringify(matchResult.missingMandatorySkills),
-          confidence: matchResult.confidence,
-        },
-        create: {
-          candidateId: profile.id,
-          jobId: job.id,
-          overallScore: matchResult.overallScore,
-          skillScore: matchResult.categoryScores.requiredSkills,
-          experienceScore: matchResult.categoryScores.experience,
-          projectScore: matchResult.categoryScores.projects,
-          educationScore: matchResult.categoryScores.education,
-          evidence: JSON.stringify(matchResult.evidence),
-          missingRequirements: JSON.stringify(matchResult.missingMandatorySkills),
-          confidence: matchResult.confidence,
-        },
-      });
+          update: {
+            overallScore: matchResult.overallScore,
+            skillScore: matchResult.categoryScores.requiredSkills,
+            experienceScore: matchResult.categoryScores.experience,
+            projectScore: matchResult.categoryScores.projects,
+            educationScore: matchResult.categoryScores.education,
+            evidence: JSON.stringify(matchResult.evidence),
+            missingRequirements: JSON.stringify(matchResult.missingMandatorySkills),
+            confidence: matchResult.confidence,
+          },
+          create: {
+            candidateId: profile.id,
+            jobId: targetJob.id,
+            overallScore: matchResult.overallScore,
+            skillScore: matchResult.categoryScores.requiredSkills,
+            experienceScore: matchResult.categoryScores.experience,
+            projectScore: matchResult.categoryScores.projects,
+            educationScore: matchResult.categoryScores.education,
+            evidence: JSON.stringify(matchResult.evidence),
+            missingRequirements: JSON.stringify(matchResult.missingMandatorySkills),
+            confidence: matchResult.confidence,
+          },
+        });
+      }
 
       res.status(200).json({
         success: true,
@@ -138,7 +163,9 @@ export class MatchingController {
         evidence: matchResult.evidence,
         learningRoadmap,
         formattingWarnings: parsedResume.atsWarnings || [],
-        job: { id: job.id, title: job.title, company: job.company?.name },
+        job: targetJob
+          ? { id: targetJob.id, title: targetJob.title, company: targetJob.company?.name }
+          : { id: 'custom', title: targetJobTitle, company: 'Custom Job Description (Pasted)', isCustom: true },
       });
     } catch (error: any) {
       console.error('analyzeCandidateVsJob error:', error);

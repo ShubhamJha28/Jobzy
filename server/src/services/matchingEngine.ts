@@ -62,7 +62,8 @@ export class MatchingEngineService {
       }
     }
 
-    const candidateSkillsLower = new Set(resume.skills.map((s) => s.toLowerCase()));
+    const skills = resume.skills || [];
+    const candidateSkillsLower = new Set(skills.map((s) => s.toLowerCase()));
 
     // 2. Skill Matching (Mandatory)
     const matchedSkills: string[] = [];
@@ -118,14 +119,15 @@ export class MatchingEngineService {
     }
 
     // 5. Technical Depth & Stack Breadth
-    const totalDetectedSkills = resume.skills.length;
+    const totalDetectedSkills = skills.length;
     let technicalDepthScore = Math.min(100, Math.max(40, totalDetectedSkills * 8));
 
     // 6. Project Relevance & Complexity
     let projectScore = 75;
-    if (resume.projects.length > 0) {
-      const hasEnterprise = resume.projects.some((p) => p.complexity === 'ENTERPRISE');
-      const hasHigh = resume.projects.some((p) => p.complexity === 'HIGH');
+    const projects = resume.projects || [];
+    if (projects.length > 0) {
+      const hasEnterprise = projects.some((p) => p.complexity === 'ENTERPRISE');
+      const hasHigh = projects.some((p) => p.complexity === 'HIGH');
       if (hasEnterprise) projectScore = 95;
       else if (hasHigh) projectScore = 88;
       else projectScore = 80;
@@ -135,8 +137,9 @@ export class MatchingEngineService {
 
     // 7. Education & Qualifications
     let educationScore = 85;
-    if (resume.education.length > 0) {
-      const hasMasterOrPhD = resume.education.some((e) => /master|m\.s|m\.tech|ph\.d/i.test(e.degree));
+    const education = resume.education || [];
+    if (education.length > 0) {
+      const hasMasterOrPhD = education.some((e) => /master|m\.s|m\.tech|ph\.d/i.test(e.degree));
       if (hasMasterOrPhD) educationScore = 95;
       else educationScore = 90;
     }
